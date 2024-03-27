@@ -36,9 +36,10 @@ class CameraApp(App):
         # Videos and images interspersed by timestamp
         # Videos should loop after finishing
     def activate_nfc(self, nfc_id):
-        self.active_nfc_id = nfc_id
+        self.nfc.activate_id(nfc_id)
+        self.album.album_path = self.nfc.pic_path
     def deactivate_nfc(self):
-        self.active_nfc_id = None
+        self.nfc.deactivate_id()
 
     def compose(self) -> ComposeResult:
         yield Header()

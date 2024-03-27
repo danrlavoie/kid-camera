@@ -4,10 +4,18 @@ from PIL import Image
 from dotenv import load_dotenv
 
 class Album():
+    @property
+    def album_path(self):
+        return self._album_path
+    @album_path.setter
+    def album_path(self, value):
+        self._album_path = value
+
     def __init__(self, path):
         self.position = 0
         self.album_path = path
         self.album_size = len([name for name in os.listdir(self.album_path) if os.path.isfile(os.path.join(self.album_path,name))])
+
     def loadImage(self):
         current_album_files = [name for name in os.listdir(self.album_path) if os.path.isfile(os.path.join(self.album_path,name))]
         fileName = current_album_files[self.position]

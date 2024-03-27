@@ -1,4 +1,3 @@
-from enum import Enum
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer
 from datetime import datetime, timedelta
@@ -6,19 +5,6 @@ from datetime import datetime, timedelta
 
 from nfc import NFC
 from album import Album
-
-class Camera(Enum):
-    SELFIE = 1
-    FORWARD = 2
-
-class CaptureMode(Enum):
-    PICTURE = 1
-    VIDEO = 2
-
-class DisplayMode(Enum):
-    GALLERY = 1
-    CAPTURE = 2
-
 class CameraApp(App):
     BINDINGS = [
         ("d", "toggle_dark", "Toggle dark mode"),

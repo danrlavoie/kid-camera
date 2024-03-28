@@ -18,3 +18,6 @@ class SelectorPosition(Enum):
     THREE = 3
     FOUR = 4
 
+class Direction(Enum):
+    FWD = 1
+    REV = 2

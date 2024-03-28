@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 # libcamera, libcamera-vid
 
 from nfc import NFC
-from album import Album
 class CameraApp(App):
     BINDINGS = [
         ("d", "toggle_dark", "Toggle dark mode"),
@@ -25,21 +24,10 @@ class CameraApp(App):
         self.last_interaction = datetime.now
         # A timeout of how long to show an image/gif after it finishes
         self.presentation_timeout = timedelta(seconds = 5)
-        # ID of current NFC card - if None, is not interfacing with a card
-        # NFC card just maintains its ID
-        # Store the last position for each album or else use 0
-        self.active_nfc_id = None
         self.nfc = NFC()
-        self.album = Album(self.nfc.pic_path)
-        # The current timestamp
-        # Consider limiting the total size of the album files
+        # Consider limiting the total size of the picture files
         # Videos and images interspersed by timestamp
         # Videos should loop after finishing
-    def activate_nfc(self, nfc_id):
-        self.nfc.activate_id(nfc_id)
-        self.album.album_path = self.nfc.pic_path
-    def deactivate_nfc(self):
-        self.nfc.deactivate_id()
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -52,7 +40,10 @@ class CameraApp(App):
         if self.display_mode == DisplayMode.CAPTURE:
             self.display_mode = DisplayMode.GALLERY
         else:
-            # Increment or decrement current album position (with wrapping)
+            # Increment or decrement current gallery position (with wrapping)
+            print("Need to change gallery position")
+        self.last_interaction = datetime.now()
+
     def action_capture(self) -> None:
         if self.display_mode == DisplayMode.GALLERY:
             self.display_mode = DisplayMode.CAPTURE
@@ -65,6 +56,7 @@ class CameraApp(App):
             self.last_capture_timestamp = datetime.now()
         # Finally, set last_interaction to now
         self.last_interaction = datetime.now()
+
     def action_quit(self) -> None:
         exit()
 

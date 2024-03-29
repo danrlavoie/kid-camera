@@ -37,10 +37,12 @@ class GPIOInput():
 
         self.encoder.steps = 0
 
-        if (encoder_fn):
-            self.setup_encoder_callback(encoder_fn)
-        if (capture_fn):
-            self.setup_capture_callback(capture_fn)
+        # Don't attach callbacks if keyboard input is active
+        if (not env['USE_KEYBOARD_INPUT']):
+            if (encoder_fn):
+                self.setup_encoder_callback(encoder_fn)
+            if (capture_fn):
+                self.setup_capture_callback(capture_fn)
 
 if __name__ == "__main__":
     gpio = GPIOInput()

@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from PIL import Image
 import cv2
 
+from kctypes import Direction
+
 # Takes care of setting up a specialized picture directory for an NFC card
 # Given an NFC identifier, when it's initialized, it makes a directory,
 # if one doesn't already exist, for the given NFC card, in the base picture dir.
@@ -62,16 +64,21 @@ class NFC():
         # This will fail if the directory has no pictures in it
         filename = current_gallery_files[self._position]
         # opencv
-        image = cv2.imread(os.path.join(self._pic_path, filename)) 
+        # image = cv2.imread(os.path.join(self._pic_path, filename)) 
         # PIL
         # image = Image.open(os.path.join(self._pic_path, fileName))
-        return image
+        return os.path.join(self._pic_path,filename)
 
     def gallery_scroll(self, direction):
-        if direction == Directions.FWD:
+        if direction == Direction.FWD:
             self._position += 1
+            if self._position >= self.gallery_size:
+                self._position = 0
         else:
             self._position -= 1
+            if self._position <0:
+                self._position = self.gallery_size - 1
+        
 
 if __name__ == '__main__':
     load_dotenv()
@@ -79,11 +86,13 @@ if __name__ == '__main__':
     image = nfc.load_image()
     # Resize the image for display
     # opencv
-    cv2.namedWindow('pic-display', cv2.WINDOW_GUI_NORMAL )
+    cv2.namedWindow('pic-display', cv2.WINDOW_NORMAL )
     cv2.setWindowProperty('pic-display', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    cv2.setWindowProperty('pic-display', cv2.WND_PROP_TOPMOST, 1)
     image = cv2.resize(image, (640, 480))
     cv2.imshow('pic-display', image)
     cv2.waitKey(0)
+    print("GOT HERE")
     # PIL
     # image = image.resize((640, 480))
     # image.show()

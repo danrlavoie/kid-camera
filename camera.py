@@ -18,6 +18,7 @@ class CameraApp():
         load_dotenv()
         fullscreen = os.getenv('FULLSCREEN')
         pygame.init()
+        font = pygame.font.Font('SauceCodeProNerdFont-Regular.ttf', 32)
         if fullscreen == 1:
             self.canvas = pygame.display.set_mode((640, 480), pygame.FULLSCREEN)
         else:
@@ -150,17 +151,26 @@ class CameraApp():
  
     def render_camera_feed(self):
         if (self.recording):
-            pass
+            recording_text = font.render('RECORDING', True, (211,198,170))
+            recording_rect = recording_text.get_rect()
+            recording_rect.center = (500, 100)
+            self.canvas.blit(recording_text, recording_rect)
             # If recording a video, can show indicator
             # If recording and the time limit is reached, stop
             # Then save the file
         if (self.camera == Camera.SELFIE):
-            pass
+            camera_text = font.render('Selfie Cam', True, (211,198,170))
+            camera_rect = recording_text.get_rect()
+            camera_rect.center = (500, 300)
+            self.canvas.blit(camera_text, camera_rect)
             # Disable forward cam
             # Enable selfie cam
             # Display selfie cam preview
         else:
-            pass
+            camera_text = font.render('Selfie Cam', True, (211,198,170))
+            camera_rect = recording_text.get_rect()
+            camera_rect.center = (500, 300)
+            self.canvas.blit(camera_text, camera_rect)
             # Disable selfie cam
             # Enable forward cam
             # Display forward cam preview
@@ -172,11 +182,9 @@ class CameraApp():
             if event.type == pygame.KEYUP:
                 # ENCODER: Left and Right arrows
                 if event.key == pygame.K_LEFT:
-                    self.nfc.gallery_scroll(Direction.REV)
-                    self.playing_video_file = None
+                    self.action_rotate_encoder(Direction.REV)
                 if event.key == pygame.K_RIGHT:
-                    self.nfc.gallery_scroll(Direction.FWD)
-                    self.playing_video_file = None
+                    self.action_rotate_encoder(Direction.FWD)
                 # SELECTOR SWITCH: 1-4 numbers
                 if event.key == pygame.K_1:
                     self.input.pos = 1
@@ -193,13 +201,14 @@ class CameraApp():
                 if event.key == pygame.K_q:
                     self.running = False
 
-    def action_rotate_encoder(self):
+    def action_rotate_encoder(self, dir):
         self.last_interaction = datetime.now()
         if self.display_mode == DisplayMode.CAPTURE:
             self.display_mode = DisplayMode.GALLERY
         else:
             # Increment or decrement current gallery position (with wrapping)
-            print("Need to change gallery position")
+            self.nfc.gallery_scroll(dir)
+            self.playing_video_file = None
 
     def action_capture(self):
         self.last_interaction = datetime.now()

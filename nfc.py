@@ -47,14 +47,12 @@ class NFC():
         If it checks and the directory already exists, it does nothing.
         """
         # Confirm that the base picture directory exists
-        if (os.path.exists(self.base_dir)):
-            # Then see if a subdir for this nfc id doesn't exist
-            if not (os.path.exists(self._pic_path)):
-                # Create the folder
-                os.makedirs(self._pic_path)
-        else:
-            # this is bad, we should already have a pics folder
-            print("NO PIC FOLDER FOUND")
+        if (not os.path.exists(self.base_dir)):
+            os.makedirs(self.base_dir)
+        # Then see if a subdir for this nfc id doesn't exist
+        if not (os.path.exists(self._pic_path)):
+            # Create the folder
+            os.makedirs(self._pic_path)
 
     def activate_id(self, id):
         """

@@ -18,7 +18,7 @@ class CameraApp():
         load_dotenv()
         fullscreen = os.getenv('FULLSCREEN')
         pygame.init()
-        font = pygame.font.Font('SauceCodeProNerdFont-Regular.ttf', 32)
+        self.font = pygame.font.Font('SauceCodeProNerdFont-Regular.ttf', 32)
         if fullscreen == 1:
             self.canvas = pygame.display.set_mode((640, 480), pygame.FULLSCREEN)
         else:
@@ -54,14 +54,17 @@ class CameraApp():
         """
         while (self.running):
             self.clock.tick(self.playing_video_fps)
+            # clear the canvas from the previous frame
+            self.canvas.fill((92,106,114))
             if (not self.recording):
                 self.set_current_mode()
             else:
                 # If recording, see if it's time to stop recording
                 delta = datetime.now() - self.last_capture_timestamp
                 if (delta > presentation_timeout):
-                    self.recording = false
+                    self.recording = False
                     # Save the recording to a file
+                    print("Finished recording!")
             self.handle_nfc_card()
             if (self.display_mode == DisplayMode.GALLERY):
                 self.render_gallery()
@@ -95,7 +98,7 @@ class CameraApp():
             # If so, we should ensure we are in capture mode
             # Otherwise we have no way to return from gallery
             self.active_pos = self.input.active_pos()
-            self.display_mode == DisplayMode.CAPTURE
+            self.display_mode = DisplayMode.CAPTURE
 
     def handle_nfc_card(self):
         """
@@ -126,7 +129,6 @@ class CameraApp():
         The video is also scaled to device size and rendered onto the canvas.
         When a video finishes playing, it will loop continuously.
         """
-        self.canvas.fill((92,106,114))
         # Get and display image at current position
         res = self.nfc.load_image()
         filename = res["filename"]
@@ -151,7 +153,7 @@ class CameraApp():
  
     def render_camera_feed(self):
         if (self.recording):
-            recording_text = font.render('RECORDING', True, (211,198,170))
+            recording_text = self.font.render('RECORDING', True, (211,198,170))
             recording_rect = recording_text.get_rect()
             recording_rect.center = (500, 100)
             self.canvas.blit(recording_text, recording_rect)
@@ -159,21 +161,32 @@ class CameraApp():
             # If recording and the time limit is reached, stop
             # Then save the file
         if (self.camera == Camera.SELFIE):
-            camera_text = font.render('Selfie Cam', True, (211,198,170))
-            camera_rect = recording_text.get_rect()
+            camera_text = self.font.render('Selfie Cam', True, (211,198,170))
+            camera_rect = camera_text.get_rect()
             camera_rect.center = (500, 300)
             self.canvas.blit(camera_text, camera_rect)
             # Disable forward cam
             # Enable selfie cam
             # Display selfie cam preview
         else:
-            camera_text = font.render('Selfie Cam', True, (211,198,170))
-            camera_rect = recording_text.get_rect()
+            camera_text = self.font.render('Forward Cam', True, (211,198,170))
+            camera_rect = camera_text.get_rect()
             camera_rect.center = (500, 300)
             self.canvas.blit(camera_text, camera_rect)
             # Disable selfie cam
             # Enable forward cam
             # Display forward cam preview
+        if (self.capture_mode == CaptureMode.PICTURE):
+            capture_text = self.font.render('Picture Mode', True, (211,198,170))
+            capture_rect = capture_text.get_rect()
+            capture_rect.center = (150, 300)
+            self.canvas.blit(capture_text, capture_rect)
+        else:
+            capture_text = self.font.render('Video Mode', True, (211,198,170))
+            capture_rect = capture_text.get_rect()
+            capture_rect.center = (150, 300)
+            self.canvas.blit(capture_text, capture_rect)
+
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -187,16 +200,16 @@ class CameraApp():
                     self.action_rotate_encoder(Direction.FWD)
                 # SELECTOR SWITCH: 1-4 numbers
                 if event.key == pygame.K_1:
-                    self.input.pos = 1
+                    self.action_selector_change(1)
                 if event.key == pygame.K_2:
-                    self.input.pos = 2
+                    self.action_selector_change(2)
                 if event.key == pygame.K_3:
-                    self.input.pos = 3
+                    self.action_selector_change(3)
                 if event.key == pygame.K_4:
-                    self.input.pos = 4
+                    self.action_selector_change(4)
                 # CAPTURE BUTTON: c key
                 if event.key == pygame.K_c:
-                    pass
+                    self.action_capture()
                 # QUIT: q key
                 if event.key == pygame.K_q:
                     self.running = False
@@ -217,14 +230,16 @@ class CameraApp():
             self.display_mode = DisplayMode.CAPTURE
         else:
             if self.capture_mode == CaptureMode.PICTURE:
-                pass
+                print("TOOK A PICTURE!")
                 # Take a pic with current self.camera
             else:
-                pass
+                self.recording = True
+                print("STARTED A RECORDING!")
                 # Take a video with current self.camera
 
-    def action_selector_change(self):
-        pass
+    def action_selector_change(self, pos):
+        self.last_interaction = datetime.now()
+        self.input.pos = pos
     def action_quit(self):
         exit()
 

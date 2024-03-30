@@ -1,5 +1,6 @@
 dotenv
 gpiozero
+pathlib
 python-opencv
 pygame
 

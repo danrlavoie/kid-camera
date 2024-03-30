@@ -14,19 +14,25 @@ class KeyboardInput():
 
     # This can be called to get the current value of the mode selector input
     def active_pos(self):
-        pass
-        # if self.selector_a.is_pressed:
-            # return SelectorPosition.ONE
-        # if self.selector_b.is_pressed:
-            # return SelectorPosition.TWO
-        # if self.selector_c.is_pressed:
-            # return SelectorPosition.THREE
-        # if self.selector_d.is_pressed:
-            # return SelectorPosition.FOUR
+        if self._pos == 1:
+            return SelectorPosition.ONE
+        elif self._pos == 2:
+            return SelectorPosition.TWO
+        elif self._pos == 3:
+            return SelectorPosition.THREE
+        elif self._pos == 4:
+            return SelectorPosition.FOUR
 
+    @property
+    def pos(self):
+        return self._pos
+    @pos.setter
+    def pos(self, value):
+        self._pos = value
     def __init__(self, encoder_fn=None, capture_fn=None):
         load_dotenv()
         env = os.environ
+        self._pos = 1
         self.encoder_steps = 0
         print("HI")
         # Attach callbacks if keyboard input is active

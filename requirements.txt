@@ -1,0 +1,5 @@
+dotenv
+gpiozero
+python-opencv
+pygame
+

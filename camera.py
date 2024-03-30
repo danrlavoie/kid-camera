@@ -1,3 +1,4 @@
+import cv2
 import os
 import pygame
 from datetime import datetime, timedelta
@@ -15,8 +16,15 @@ presentation_timeout = timedelta(seconds = 5)
 class CameraApp():
     def __init__(self):
         load_dotenv()
+        fullscreen = os.getenv('FULLSCREEN')
         pygame.init()
-        self.canvas = pygame.display.set_mode((640, 480))
+        if fullscreen == 1:
+            self.canvas = pygame.display.set_mode((640, 480), pygame.FULLSCREEN)
+        else:
+            self.canvas = pygame.display.set_mode((640, 480))
+        self.clock = pygame.time.Clock()
+        self.playing_video_file = None
+        self.playing_video_fps = -1
         self.running = True
         self.camera = Camera.SELFIE
         self.capture_mode = CaptureMode.PICTURE
@@ -38,6 +46,7 @@ class CameraApp():
 
     def run(self):
         while (self.running):
+            self.clock.tick(self.playing_video_fps)
             # Main program loop
             # Check 4pos switch to have the right camera modes
             if (not self.recording):
@@ -77,14 +86,28 @@ class CameraApp():
                     self.nfc.deactivate_id()
             # Next, handle display logic
             if (self.display_mode == DisplayMode.GALLERY):
-                # Get and display image at current position
-                filename = self.nfc.load_image()
-                image = pygame.image.load(filename)
-                image = pygame.transform.scale(image, (640, 480))
                 self.canvas.fill((92,106,114))
-                self.canvas.blit(image, dest = (0,0))
-                pass
+                # Get and display image at current position
+                res = self.nfc.load_image()
+                filename = res["filename"]
+                extension = res["extension"]
+                if (not extension == ".mp4"):
+                    image = pygame.image.load(filename)
+                    image = pygame.transform.scale(image, (640, 480))
+                    self.canvas.blit(image, dest = (0,0))
                 # If a video, make sure it loops
+                else:
+                    if (not self.playing_video_file):
+                        self.playing_video_file = cv2.VideoCapture(filename)
+                        self.playing_video_fps = self.playing_video_file.get(cv2.CAP_PROP_FPS)
+                    success, video_image = self.playing_video_file.read()
+                    if success:
+                        video_surf = pygame.image.frombuffer(video_image.tobytes(), video_image.shape[1::-1], "BGR")
+                        video_surf = pygame.transform.scale(video_surf, (640,480))
+                        self.canvas.blit(video_surf, (0,0))
+                    else:
+                        # Likely the end of the video frame, loop back to start
+                        self.playing_video_file.set(cv2.CAP_PROP_POS_FRAMES, 0)
             else:
                 # Hide picture gallery, then show camera feed
                 if (self.recording):
@@ -110,9 +133,13 @@ class CameraApp():
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_LEFT:
                         self.nfc.gallery_scroll(Direction.REV)
+                        self.playing_video_file = None
                     if event.key == pygame.K_RIGHT:
                         self.nfc.gallery_scroll(Direction.FWD)
-            pygame.display.update()
+                        self.playing_video_file = None
+                    if event.key == pygame.K_q:
+                        self.running = False
+            pygame.display.flip()
     def action_rotate_encoder(self):
         self.last_interaction = datetime.now()
         if self.display_mode == DisplayMode.CAPTURE:

@@ -1,5 +1,6 @@
 import os
 
+import pathlib
 from dotenv import load_dotenv
 from PIL import Image
 import cv2
@@ -63,11 +64,11 @@ class NFC():
         current_gallery_files = [name for name in os.listdir(self._pic_path) if os.path.isfile(os.path.join(self._pic_path,name))]
         # This will fail if the directory has no pictures in it
         filename = current_gallery_files[self._position]
-        # opencv
-        # image = cv2.imread(os.path.join(self._pic_path, filename)) 
-        # PIL
-        # image = Image.open(os.path.join(self._pic_path, fileName))
-        return os.path.join(self._pic_path,filename)
+        extension = pathlib.Path(filename).suffix
+        return {
+            "filename": os.path.join(self._pic_path,filename),
+            "extension": extension
+        }
 
     def gallery_scroll(self, direction):
         if direction == Direction.FWD:

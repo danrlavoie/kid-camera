@@ -7,15 +7,19 @@ from dotenv import load_dotenv
 
 from nfc import NFC
 from gpioinput import GPIOInput
-from keyboardinput import KeyboardInput
 from kctypes import Camera, CaptureMode, DisplayMode, SelectorPosition, Direction
 
 # A timeout of how long to show an image/gif after it finishes
 presentation_timeout = timedelta(seconds = 5)
+ENCODER_ROTATED = pygame.USEREVENT + 1
+CAPTURE_PRESSED = pygame.USEREVENT + 2
 
 class CameraApp():
     def __init__(self):
+        # First, load environment
         load_dotenv()
+
+        # Next, Pygame setup
         fullscreen = os.getenv('FULLSCREEN')
         pygame.init()
         self.font = pygame.font.Font('SauceCodeProNerdFont-Regular.ttf', 32)
@@ -24,26 +28,22 @@ class CameraApp():
         else:
             self.canvas = pygame.display.set_mode((640, 480))
         self.clock = pygame.time.Clock()
-        self.playing_video_file = None
-        self.playing_video_fps = -1
-        self.running = True
-        self.camera = Camera.SELFIE
-        self.capture_mode = CaptureMode.PICTURE
-        self.display_mode = DisplayMode.GALLERY
-        self.active_pos = SelectorPosition.ONE
-        # Whether a video is being recorded
-        self.recording = False
-        # The timestamp at which the last image was taken
-        self.last_capture_timestamp = datetime.min
-        # The timestamp at which the last button press occurred
-        self.last_interaction = datetime.now
+
+        # Next, set up state variables
+        self.running = True                         # Is the app running or not?
+        self.playing_video_file = None              # If a video is playing on the screen, which video is it
+        self.playing_video_fps = -1                 # What is the frames-per-second of the current video file
+        self.camera = Camera.SELFIE                 # Whether selfie or forward facing camera is active
+        self.capture_mode = CaptureMode.PICTURE     # Whether camera is recording pictures or video
+        self.display_mode = DisplayMode.GALLERY     # Whether screen is showing camera or gallery
+        self.active_pos = SelectorPosition.ONE      # Active position on the mode selector
+        self.recording = False                      # Whether a video is being recorded
+        self.last_capture_timestamp = datetime.min  # The timestamp at which the last image was taken
+        self.last_interaction = datetime.now        # The timestamp at which the last button press occurred
+
+        # Finally, set up the additional modules that plug into the main class
         self.nfc = NFC(os.getenv('BASE_PIC_PATH'))
-        self.gpio_input = GPIOInput(self.action_rotate_encoder, self.action_capture)
-        self.keyboard_input = KeyboardInput(self.action_rotate_encoder, self.action_capture)
-        if (os.getenv('USE_KEYBOARD_INPUT')):
-            self.input = self.keyboard_input
-        else:
-            self.input = self.gpio_input
+        self.input = GPIOInput(self.post_custom_event, ENCODER_ROTATED, CAPTURE_PRESSED)
 
     def run(self):
         """
@@ -213,6 +213,10 @@ class CameraApp():
                 # QUIT: q key
                 if event.key == pygame.K_q:
                     self.running = False
+            if event.type == ENCODER_ROTATED:
+                self.action_rotate_encoder(event.dir)
+            if event.type == CAPTURE_PRESSED:
+                self.action_capture()
 
     def action_rotate_encoder(self, dir):
         self.last_interaction = datetime.now()
@@ -240,8 +244,9 @@ class CameraApp():
     def action_selector_change(self, pos):
         self.last_interaction = datetime.now()
         self.input.pos = pos
-    def action_quit(self):
-        exit()
+    def post_custom_event(self, event_key, **attributes):
+        my_event = pygame.event.Event(event_key, **attributes)
+        pygame.event.post(my_event)
 
 if __name__ == "__main__":
     app = CameraApp()

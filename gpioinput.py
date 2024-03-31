@@ -7,7 +7,15 @@ import os
 from kctypes import SelectorPosition, Direction
 class GPIOInput():
     # This can be called to get the current value of the mode selector input
-    def active_pos(self):
+    def active_pos(self, override=None):
+        """
+        active_pos returns the current value of the mode selector input.
+        The override argument can be used to override whatever the hardware says
+        with a specific SelectorPosition value. This is useful when using keyboard
+        input.
+        """
+        if (override != None):
+            return override
         if self.selector_a.is_pressed:
             return SelectorPosition.ONE
         if self.selector_b.is_pressed:

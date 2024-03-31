@@ -37,6 +37,7 @@ class CameraApp():
         self.capture_mode = CaptureMode.PICTURE     # Whether camera is recording pictures or video
         self.display_mode = DisplayMode.GALLERY     # Whether screen is showing camera or gallery
         self.active_pos = SelectorPosition.ONE      # Active position on the mode selector
+        self.pos_override = None                    # Overriden mode selection, if using keyboard control
         self.recording = False                      # Whether a video is being recorded
         self.last_capture_timestamp = datetime.min  # The timestamp at which the last image was taken
         self.last_interaction = datetime.now        # The timestamp at which the last button press occurred
@@ -81,23 +82,24 @@ class CameraApp():
         also checks whether the mode has changed since the last frame, and uses
         that check to determine if the app needs to be in capture mode.
         """
-        if self.input.active_pos() == SelectorPosition.ONE:
+        position = self.input.active_pos(override=self.pos_override)
+        if position == SelectorPosition.ONE:
             self.camera = Camera.SELFIE
             self.capture_mode = CaptureMode.PICTURE
-        elif self.input.active_pos() == SelectorPosition.TWO:
+        elif position == SelectorPosition.TWO:
             self.camera = Camera.SELFIE
             self.capture_mode = CaptureMode.VIDEO
-        elif self.input.active_pos() == SelectorPosition.THREE:
+        elif position == SelectorPosition.THREE:
             self.camera = Camera.FORWARD
             self.capture_mode = CaptureMode.PICTURE
-        elif self.input.active_pos() == SelectorPosition.FOUR:
+        elif position == SelectorPosition.FOUR:
             self.camera = Camera.FORWARD
             self.capture_mode = CaptureMode.VIDEO
-        if (not self.input.active_pos() == self.active_pos):
+        if (not position == self.active_pos):
             # This checks if we've changed 4pos modes
             # If so, we should ensure we are in capture mode
             # Otherwise we have no way to return from gallery
-            self.active_pos = self.input.active_pos()
+            self.active_pos = position
             self.display_mode = DisplayMode.CAPTURE
 
     def handle_nfc_card(self):
@@ -152,14 +154,16 @@ class CameraApp():
                 self.playing_video_file.set(cv2.CAP_PROP_POS_FRAMES, 0)
  
     def render_camera_feed(self):
-        if (self.recording):
-            recording_text = self.font.render('RECORDING', True, (211,198,170))
-            recording_rect = recording_text.get_rect()
-            recording_rect.center = (500, 100)
-            self.canvas.blit(recording_text, recording_rect)
-            # If recording a video, can show indicator
-            # If recording and the time limit is reached, stop
-            # Then save the file
+        """
+        render_camera_feed renders what the current active camera sees onto the
+        screen.
+        It first checks whether to display the forward cam or selfie cam.
+        Whichever camera is active has its image preview streamed to the screen.
+        Next, it checks whether the device is in picture or video mode. A
+        matching indicator is displayed to the screen.
+        Then, it checks if the device is actively recording a video - if so, an
+        indicator is displayed overlaying the screen.
+        """
         if (self.camera == Camera.SELFIE):
             camera_text = self.font.render('Selfie Cam', True, (211,198,170))
             camera_rect = camera_text.get_rect()
@@ -186,9 +190,26 @@ class CameraApp():
             capture_rect = capture_text.get_rect()
             capture_rect.center = (150, 300)
             self.canvas.blit(capture_text, capture_rect)
+        if (self.recording):
+            recording_text = self.font.render('RECORDING', True, (211,198,170))
+            recording_rect = recording_text.get_rect()
+            recording_rect.center = (500, 100)
+            self.canvas.blit(recording_text, recording_rect)
+            # If recording a video, can show indicator
 
 
     def handle_events(self):
+        """
+        handle_events is where all the pygame events are processed for the app.
+        Aside from the quit event, the app listens to the following events:
+        - A custom ENCODER_ROTATED event mapping to a gpiozero Encoder
+        - A custom CAPTURE_PRESSED event mapping to a gpiozero Button
+        - Another option for quitting with the q key
+        - Left and right arrow keys to simulate the encoder rotation
+        - The c key to simulate the capture pressed behavior
+        - Numbers 1-4 to override the mode switching feature in the gpiozero
+          inputs.
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -207,6 +228,8 @@ class CameraApp():
                     self.action_selector_change(3)
                 if event.key == pygame.K_4:
                     self.action_selector_change(4)
+                if event.key == pygame.K_0:
+                    self.action_selector_change()
                 # CAPTURE BUTTON: c key
                 if event.key == pygame.K_c:
                     self.action_capture()
@@ -219,6 +242,16 @@ class CameraApp():
                 self.action_capture()
 
     def action_rotate_encoder(self, dir):
+        """
+        action_rotate_encoder represents one measured tick of the rotary
+        encoder on the device.
+        If the system isn't in gallery mode, it will switch to gallery mode.
+        If it's already in gallery mode, the encoder rotation will be used to
+        scrub through the available photos and videos.
+        Rotating the encoder also resets any playing video files in the program
+        state.
+        @param dir the Direction to rotate, either FWD (clockwise) or REV.
+        """
         self.last_interaction = datetime.now()
         if self.display_mode == DisplayMode.CAPTURE:
             self.display_mode = DisplayMode.GALLERY
@@ -228,6 +261,16 @@ class CameraApp():
             self.playing_video_file = None
 
     def action_capture(self):
+        """
+        action_capture initiates a picture or video capture on the device.
+        If in picture mode, the current active camera is used to take a picture
+        and then the image is saved to the filesystem.
+        If in video mode, a video recording is started and system state is
+        updated to indicate that a recording is active.
+        Either way, a timestamp is also recorded for when the capture happened,
+        so that timed events like the end of a video recording or the
+        end of a picture presentation can be set up.
+        """
         self.last_interaction = datetime.now()
         self.last_capture_timestamp = datetime.now()
         if self.display_mode == DisplayMode.GALLERY:
@@ -241,10 +284,29 @@ class CameraApp():
                 print("STARTED A RECORDING!")
                 # Take a video with current self.camera
 
-    def action_selector_change(self, pos):
+    def action_selector_change(self, pos=None):
+        """
+        action_selector_change is a helper function when running the app with
+        only keyboard input. It sets up an override value so that the app is
+        able to switch which camera or display modes it's using even if reading
+        different (or null) data from a gpio input.
+        If an override is set, use the 0 key to remove it so that gpio input
+        will work again.
+        @param pos a SelectorPosition to use, or None.
+        """
         self.last_interaction = datetime.now()
-        self.input.pos = pos
+        self.pos_override = pos
     def post_custom_event(self, event_key, **attributes):
+        """
+        post_custom_event - a wrapper to tell pygame that a particular event
+        has been triggered.
+        This function is used to pass references to the pygame event bus to
+        another class object, so it can trigger a specific event from its own
+        code.
+        @param event_key the pygame USEREVENT key to be triggered
+        @param **attributes a list of named key-value attributes to include in
+            the event data
+        """
         my_event = pygame.event.Event(event_key, **attributes)
         pygame.event.post(my_event)
 

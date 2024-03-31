@@ -9,6 +9,3 @@ FOURPOS_C_ID=12
 FOURPOS_D_ID=16
 
 FULLSCREEN=1
-# Env vars for testing without the hardware
-USE_KEYBOARD_INPUT=1
-GPIOZERO_PIN_FACTORY=mock

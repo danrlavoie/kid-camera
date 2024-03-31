@@ -1,10 +1,10 @@
 from functools import partial
 from gpiozero import RotaryEncoder
 from gpiozero import Button
-from dotenv import load_dotenv
-import os
 
 from kctypes import SelectorPosition, Direction
+import constants
+
 class GPIOInput():
     # This can be called to get the current value of the mode selector input
     def active_pos(self, override=None):
@@ -26,17 +26,15 @@ class GPIOInput():
             return SelectorPosition.FOUR
 
     def __init__(self, pygame_event_fn=None, encoder_event_key=None, capture_event_key=None ):
-        load_dotenv()
-        env = os.environ
         self.pygame_event_fn = pygame_event_fn
         self.encoder_event_key = encoder_event_key
         self.capture_event_key = capture_event_key
-        self.encoder = RotaryEncoder(env['ENCODER_INPUT_A_ID'], env['ENCODER_INPUT_B_ID'], bounce_time=0.2, wrap=True)
-        self.capture_button = Button(env['CAPTURE_BUTTON_ID'], bounce_time=0.2)
-        self.selector_a = Button(env['FOURPOS_A_ID'])
-        self.selector_b = Button(env['FOURPOS_B_ID'])
-        self.selector_c = Button(env['FOURPOS_C_ID'])
-        self.selector_d = Button(env['FOURPOS_D_ID'])
+        self.encoder = RotaryEncoder(constants.ENCODER_INPUT_A_ID, constants.ENCODER_INPUT_B_ID, bounce_time=0.2, wrap=True)
+        self.capture_button = Button(constants.CAPTURE_BUTTON_ID, bounce_time=0.2)
+        self.selector_a = Button(constants.FOURPOS_A_ID)
+        self.selector_b = Button(constants.FOURPOS_B_ID)
+        self.selector_c = Button(constants.FOURPOS_C_ID)
+        self.selector_d = Button(constants.FOURPOS_D_ID)
 
         self.encoder.steps = 0
         self.encoder.when_rotated_clockwise = partial(pygame_event_fn, encoder_event_key, dir=Direction.FWD)

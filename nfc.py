@@ -1,10 +1,9 @@
 import os
-
 import pathlib
-from dotenv import load_dotenv
 import cv2
 
 from kctypes import Direction
+import constants
 
 # Takes care of setting up a specialized picture directory for an NFC card
 # Given an NFC identifier, when it's initialized, it makes a directory,
@@ -112,8 +111,7 @@ class NFC():
         
 
 if __name__ == '__main__':
-    load_dotenv()
-    nfc = NFC(os.getenv('BASE_PIC_PATH'))
+    nfc = NFC(constants.BASE_PIC_PATH)
     image = nfc.load_image()
     cv2.namedWindow('pic-display', cv2.WINDOW_NORMAL )
     cv2.setWindowProperty('pic-display', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)

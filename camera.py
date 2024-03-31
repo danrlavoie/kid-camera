@@ -1,13 +1,12 @@
 import cv2
-import os
 import pygame
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
 # libcamera, libcamera-vid
 
 from nfc import NFC
 from gpioinput import GPIOInput
 from kctypes import Camera, CaptureMode, DisplayMode, SelectorPosition, Direction
+import constants
 
 # A timeout of how long to show an image/gif after it finishes
 presentation_timeout = timedelta(seconds = 5)
@@ -16,11 +15,8 @@ CAPTURE_PRESSED = pygame.USEREVENT + 2
 
 class CameraApp():
     def __init__(self):
-        # First, load environment
-        load_dotenv()
-
-        # Next, Pygame setup
-        fullscreen = os.getenv('FULLSCREEN')
+        # First, Pygame setup
+        fullscreen = constants.FULLSCREEN
         pygame.init()
         self.font = pygame.font.Font('SauceCodeProNerdFont-Regular.ttf', 32)
         if fullscreen == 1:
@@ -43,7 +39,7 @@ class CameraApp():
         self.last_interaction = datetime.now        # The timestamp at which the last button press occurred
 
         # Finally, set up the additional modules that plug into the main class
-        self.nfc = NFC(os.getenv('BASE_PIC_PATH'))
+        self.nfc = NFC(constants.BASE_PIC_PATH)
         self.input = GPIOInput(self.post_custom_event, ENCODER_ROTATED, CAPTURE_PRESSED)
 
     def run(self):

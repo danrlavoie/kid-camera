@@ -29,13 +29,15 @@ class CameraApp():
         self.clock = pygame.time.Clock()
 
         self.camlist = pygame.camera.list_cameras()
+        if not self.camlist:
+            raise ValueError("Sorry, no cameras detected.")
         #print(self.camlist)
 
         # Next, set up state variables
         self.running = True                         # Is the app running or not?
         self.playing_video_file = None              # If a video is playing on the screen, which video is it
         self.playing_video_fps = -1                 # What is the frames-per-second of the current video file
-        self.camera_mode = Camera.SELFIE                 # Whether selfie or forward facing camera is active
+        self.camera_mode = Camera.SELFIE            # Whether selfie or forward facing camera is active
         self.capture_mode = CaptureMode.PICTURE     # Whether camera is recording pictures or video
         self.display_mode = DisplayMode.GALLERY     # Whether screen is showing camera or gallery
         self.active_pos = SelectorPosition.ONE      # Active position on the mode selector
@@ -47,6 +49,9 @@ class CameraApp():
         # Finally, set up the additional modules that plug into the main class
         self.nfc = NFC(constants.BASE_PIC_PATH)
         self.input = GPIOInput(self.post_custom_event, ENCODER_ROTATED, CAPTURE_PRESSED)
+        self.cam_selfie = pygame.camera.Camera("/dev/video0",(640,480))
+        self.cam_fwd = pygame.camera.Camera("/dev/video0",(640,480))
+        # @TODO confirm self.cam_fwd
 
     def run(self):
         """
@@ -76,6 +81,8 @@ class CameraApp():
             self.handle_events()
             pygame.display.flip()
         # If not running anymore, quit the app
+        self.cam_selfie.stop()
+        self.cam_fwd.stop()
         pygame.quit()
 
     def set_current_mode(self):
@@ -168,32 +175,47 @@ class CameraApp():
         Then, it checks if the device is actively recording a video - if so, an
         indicator is displayed overlaying the screen.
         """
+        snapshot = None
         if (self.camera_mode == Camera.SELFIE):
-            camera_text = self.font.render('Selfie Cam', True, (211,198,170))
-            camera_rect = camera_text.get_rect()
-            camera_rect.center = (500, 300)
-            self.canvas.blit(camera_text, camera_rect)
+            # camera_text = self.font.render('Selfie Cam', True, (211,198,170))
+            # camera_rect = camera_text.get_rect()
+            # camera_rect.center = (500, 300)
+            # self.canvas.blit(camera_text, camera_rect)
             # Disable forward cam
             # Enable selfie cam
             # Display selfie cam preview
+            if self.cam_selfie.query_image():
+                # @TODO Should this be self.snapshot or not?
+                snapshot = self.cam_selfie.get_image(snapshot)
+
         else:
-            camera_text = self.font.render('Forward Cam', True, (211,198,170))
-            camera_rect = camera_text.get_rect()
-            camera_rect.center = (500, 300)
-            self.canvas.blit(camera_text, camera_rect)
+            # camera_text = self.font.render('Forward Cam', True, (211,198,170))
+            # camera_rect = camera_text.get_rect()
+            # camera_rect.center = (500, 300)
+            # self.canvas.blit(camera_text, camera_rect)
             # Disable selfie cam
             # Enable forward cam
             # Display forward cam preview
+            if self.cam_fwd.query_image():
+                # @TODO Should this be self.snapshot or not?
+                snapshot = self.cam_fwd.get_image(snapshot)
+
+        # Display the snapshot preview
+        self.canvas.blit(snapshot, (0,0))
+
         if (self.capture_mode == CaptureMode.PICTURE):
-            capture_text = self.font.render('Picture Mode', True, (211,198,170))
-            capture_rect = capture_text.get_rect()
-            capture_rect.center = (150, 300)
-            self.canvas.blit(capture_text, capture_rect)
+            # capture_text = self.font.render('Picture Mode', True, (211,198,170))
+            # capture_rect = capture_text.get_rect()
+            # capture_rect.center = (150, 300)
+            # self.canvas.blit(capture_text, capture_rect)
+            pass
         else:
             capture_text = self.font.render('Video Mode', True, (211,198,170))
             capture_rect = capture_text.get_rect()
             capture_rect.center = (150, 300)
             self.canvas.blit(capture_text, capture_rect)
+            pass
+
         if (self.recording):
             recording_text = self.font.render('RECORDING', True, (211,198,170))
             recording_rect = recording_text.get_rect()

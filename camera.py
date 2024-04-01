@@ -1,6 +1,7 @@
 import cv2
 import pygame
 from datetime import datetime, timedelta
+import sys
 # libcamera, libcamera-vid
 
 from nfc import NFC
@@ -69,6 +70,8 @@ class CameraApp():
                 self.render_camera_feed()
             self.handle_events()
             pygame.display.flip()
+        # If not running anymore, quit the app
+        pygame.quit()
 
     def set_current_mode(self):
         """
@@ -309,3 +312,4 @@ class CameraApp():
 if __name__ == "__main__":
     app = CameraApp()
     app.run()
+    sys.exit()

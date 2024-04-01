@@ -29,13 +29,13 @@ class CameraApp():
         self.clock = pygame.time.Clock()
 
         self.camlist = pygame.camera.list_cameras()
-        print(self.camlist)
+        #print(self.camlist)
 
         # Next, set up state variables
         self.running = True                         # Is the app running or not?
         self.playing_video_file = None              # If a video is playing on the screen, which video is it
         self.playing_video_fps = -1                 # What is the frames-per-second of the current video file
-        self.camera = Camera.SELFIE                 # Whether selfie or forward facing camera is active
+        self.camera_mode = Camera.SELFIE                 # Whether selfie or forward facing camera is active
         self.capture_mode = CaptureMode.PICTURE     # Whether camera is recording pictures or video
         self.display_mode = DisplayMode.GALLERY     # Whether screen is showing camera or gallery
         self.active_pos = SelectorPosition.ONE      # Active position on the mode selector
@@ -88,16 +88,16 @@ class CameraApp():
         """
         position = self.input.active_pos(override=self.pos_override)
         if position == SelectorPosition.ONE:
-            self.camera = Camera.SELFIE
+            self.camera_mode = Camera.SELFIE
             self.capture_mode = CaptureMode.PICTURE
         elif position == SelectorPosition.TWO:
-            self.camera = Camera.SELFIE
+            self.camera_mode = Camera.SELFIE
             self.capture_mode = CaptureMode.VIDEO
         elif position == SelectorPosition.THREE:
-            self.camera = Camera.FORWARD
+            self.camera_mode = Camera.FORWARD
             self.capture_mode = CaptureMode.PICTURE
         elif position == SelectorPosition.FOUR:
-            self.camera = Camera.FORWARD
+            self.camera_mode = Camera.FORWARD
             self.capture_mode = CaptureMode.VIDEO
         if (not position == self.active_pos):
             # This checks if we've changed 4pos modes
@@ -168,7 +168,7 @@ class CameraApp():
         Then, it checks if the device is actively recording a video - if so, an
         indicator is displayed overlaying the screen.
         """
-        if (self.camera == Camera.SELFIE):
+        if (self.camera_mode == Camera.SELFIE):
             camera_text = self.font.render('Selfie Cam', True, (211,198,170))
             camera_rect = camera_text.get_rect()
             camera_rect.center = (500, 300)
@@ -282,11 +282,11 @@ class CameraApp():
         else:
             if self.capture_mode == CaptureMode.PICTURE:
                 print("TOOK A PICTURE!")
-                # Take a pic with current self.camera
+                # Take a pic with current self.camera_mode
             else:
                 self.recording = True
                 print("STARTED A RECORDING!")
-                # Take a video with current self.camera
+                # Take a video with current self.camera_mode
 
     def action_selector_change(self, pos=None):
         """

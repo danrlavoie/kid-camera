@@ -51,6 +51,7 @@ class CameraApp():
         self.input = GPIOInput(self.post_custom_event, ENCODER_ROTATED, CAPTURE_PRESSED)
         self.cam_selfie = pygame.camera.Camera("/dev/video0",(640,480))
         self.cam_fwd = pygame.camera.Camera("/dev/video0",(640,480))
+        self.capture_surface = pygame.surface.Surface((640,480), 0, self.canvas)
         # @TODO confirm self.cam_fwd
 
     def run(self):
@@ -175,7 +176,6 @@ class CameraApp():
         Then, it checks if the device is actively recording a video - if so, an
         indicator is displayed overlaying the screen.
         """
-        snapshot = None
         if (self.camera_mode == Camera.SELFIE):
             # camera_text = self.font.render('Selfie Cam', True, (211,198,170))
             # camera_rect = camera_text.get_rect()
@@ -186,7 +186,7 @@ class CameraApp():
             # Display selfie cam preview
             if self.cam_selfie.query_image():
                 # @TODO Should this be self.snapshot or not?
-                snapshot = self.cam_selfie.get_image(snapshot)
+                self.capture_surface = self.cam_selfie.get_image(self.capture_surface)
 
         else:
             # camera_text = self.font.render('Forward Cam', True, (211,198,170))
@@ -198,10 +198,11 @@ class CameraApp():
             # Display forward cam preview
             if self.cam_fwd.query_image():
                 # @TODO Should this be self.snapshot or not?
-                snapshot = self.cam_fwd.get_image(snapshot)
+                #snapshot = self.cam_fwd.get_image(snapshot)
+                self.capture_surface = self.cam_fwd.get_image(self.capture_surface)
 
         # Display the snapshot preview
-        self.canvas.blit(snapshot, (0,0))
+        self.canvas.blit(self.capture_surface, (0,0))
 
         if (self.capture_mode == CaptureMode.PICTURE):
             # capture_text = self.font.render('Picture Mode', True, (211,198,170))

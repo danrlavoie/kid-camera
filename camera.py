@@ -76,8 +76,12 @@ class CameraApp():
                     print("Finished recording!")
             self.handle_nfc_card()
             if (self.display_mode == DisplayMode.GALLERY):
+                self.cam_selfie.stop()
+                self.cam_fwd.stop()
                 self.render_gallery()
             else:
+                self.cam_selfie.start()
+                self.cam_fwd.start()
                 self.render_camera_feed()
             self.handle_events()
             pygame.display.flip()
@@ -188,7 +192,7 @@ class CameraApp():
                 # @TODO Should this be self.snapshot or not?
                 self.capture_surface = self.cam_selfie.get_image(self.capture_surface)
 
-        else:
+        else: #Camera FWD
             # camera_text = self.font.render('Forward Cam', True, (211,198,170))
             # camera_rect = camera_text.get_rect()
             # camera_rect.center = (500, 300)

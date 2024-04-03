@@ -146,7 +146,7 @@ class CameraApp():
                 self.playing_video_fps = self.playing_video_file.get(cv2.CAP_PROP_FPS)
             success, video_image = self.playing_video_file.read()
             if success:
-                video_surf = pygame.image.frombuffer(video_image.tobytes(), video_image.shape[1::-1], "BGR")
+                video_surf = pygame.image.frombuffer(video_image.tobytes(), video_image.shape[1::-1], "RGB")
                 video_surf = pygame.transform.scale(video_surf, (640,480))
                 self.canvas.blit(video_surf, (0,0))
             else:

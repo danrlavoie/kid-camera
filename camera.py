@@ -41,6 +41,9 @@ class CameraApp():
         self.last_capture_timestamp = datetime.min  # The timestamp at which the last image was taken
         self.last_interaction = datetime.now        # The timestamp at which the last button press occurred
 
+        #set up subprocess handlers
+        self.previewProcess = None                  # For running libcamera-hello
+
         # Finally, set up the additional modules that plug into the main class
         self.nfc = NFC(constants.BASE_ALBUM_PATH)
         self.input = GPIOInput(self.post_custom_event, ENCODER_ROTATED, CAPTURE_PRESSED)

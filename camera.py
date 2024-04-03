@@ -177,6 +177,7 @@ class CameraApp():
             # Disable forward cam
             if self.previewProcess is not None:
                 self.previewProcess.terminate()
+            self.canvas = pygame.display.set_mode((640, 480), pygame.HIDDEN)
             # Enable selfie cam and Display selfie cam preview
             self.previewProcess = subprocess.Popen(['libcamera-hello', '-t', '0', '--camera', constants.SELFIE_CAM_ID])
         else:
@@ -187,6 +188,7 @@ class CameraApp():
             # Disable selfie cam
             if self.previewProcess is not None:
                 self.previewProcess.terminate()
+            self.canvas = pygame.display.set_mode((640, 480), pygame.HIDDEN)
             # Enable forward cam and Display forward cam preview
             self.previewProcess = subprocess.Popen(['libcamera-hello', '-t', '0', '--camera', constants.FWD_CAM_ID])
 
@@ -266,6 +268,7 @@ class CameraApp():
         self.last_interaction = datetime.now()
         if self.display_mode == DisplayMode.CAPTURE:
             self.display_mode = DisplayMode.GALLERY
+            self.canvas = pygame.display.set_mode((640, 480), pygame.FULLSCREEN)
         else:
             # Increment or decrement current gallery position (with wrapping)
             self.nfc.gallery_scroll(dir)

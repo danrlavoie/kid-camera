@@ -14,7 +14,7 @@ class MyApp():
 
     def run(self):
         print("run")
-        self.cam.start_preview(Preview.QTGL)
+        self.cam.start_preview(Preview.QTGL, x=0, y=0, width=640, height = 480)
         self.cam.start()
         time.sleep(3)
         filename = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.jpg")

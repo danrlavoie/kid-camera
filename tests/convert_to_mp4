@@ -1,0 +1,35 @@
+import subprocess
+import time
+import datetime
+import os.path
+import sys
+
+VID_DUR_S = 5000
+
+class MyApp():
+    def __init__(self):
+        print("init")
+
+    def run(self):
+        print("run")
+
+        filename = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.h264")
+        savepath = "/home/me691kidcam/kid-camera/temp"
+        captured_vid_path = os.path.join(savepath, filename)
+        convertpath = "/home/me691kidcam/kid-camera/pics/default"
+        converted_vid_path = os.path.join(convertpath, filename)
+
+        self.libcamprocess = subprocess.Popen(['libcamera-vid', '-t', VID_DUR_S, '-o', 'captured_vid_path'])
+        while self.libcamprocess.poll() is None:
+            time.sleep(0.1)
+        print("done recording")
+        
+        self.mp4process = subprocess.Popen(['MP4Box', '-add', 'captured_vid_path', 'converted_vid_path'])
+        while self.mp4process.poll() is None:
+            time.sleep(0.1)
+        print("done converting")
+
+if __name__ == "__main__":
+    app = MyApp()
+    app.run()
+    sys.exit()

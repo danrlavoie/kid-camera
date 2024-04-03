@@ -1,0 +1,45 @@
+import os
+import time
+from gpiozero import Button
+from signal import pause
+import subprocess
+
+take_still = False
+def btn_press():
+    global take_still
+    print("pressed")
+    take_still = True
+    
+class MyApp():
+    def save_image(self):
+        print("take still")
+        self.process.terminate()
+        os.system("libcamera-still --datetime")
+        self.process = subprocess.Popen(['libcamera-hello', '-t', '0'])
+        
+    def __init__(self):
+        self.process = subprocess.Popen(['libcamera-hello', '-t', '0'])
+        self.btn = Button(25)
+        self.btn.when_pressed = btn_press
+        self.running = True
+        
+    def run(self):
+        global take_still
+        while(True == self.running):
+            if(True == take_still):
+                print("is true")
+                self.save_image()
+                take_still = False
+            else:
+                continue
+
+            #run
+#         try:
+#             process.wait(timeout=30)
+#         except subprocess.TimeoutExpired:
+#             process.terminate()
+
+if __name__ == "__main__":
+    app = MyApp()
+    app.run()
+    pause()

@@ -4,6 +4,7 @@ import pygame.camera
 from datetime import datetime, timedelta
 import sys
 # libcamera, libcamera-vid
+import subprocess
 
 from nfc import NFC
 from gpioinput import GPIOInput
@@ -41,7 +42,7 @@ class CameraApp():
         self.last_interaction = datetime.now        # The timestamp at which the last button press occurred
 
         # Finally, set up the additional modules that plug into the main class
-        self.nfc = NFC(constants.BASE_PIC_PATH)
+        self.nfc = NFC(constants.BASE_ALBUM_PATH)
         self.input = GPIOInput(self.post_custom_event, ENCODER_ROTATED, CAPTURE_PRESSED)
 
     def run(self):
@@ -164,22 +165,27 @@ class CameraApp():
         Then, it checks if the device is actively recording a video - if so, an
         indicator is displayed overlaying the screen.
         """
+        #SELFIE OR FWD
         if (self.camera == Camera.SELFIE):
             camera_text = self.font.render('Selfie Cam', True, (211,198,170))
             camera_rect = camera_text.get_rect()
             camera_rect.center = (500, 300)
             self.canvas.blit(camera_text, camera_rect)
             # Disable forward cam
-            # Enable selfie cam
-            # Display selfie cam preview
+            self.fwdPreviewProcess.terminate()
+            # Enable selfie cam and Display selfie cam preview
+            self.slfPreviewProcess = subprocess.Popen(['libcamera-hello', '-t', '0', '--camera', constants.SELFIE_CAM_ID])
         else:
             camera_text = self.font.render('Forward Cam', True, (211,198,170))
             camera_rect = camera_text.get_rect()
             camera_rect.center = (500, 300)
             self.canvas.blit(camera_text, camera_rect)
             # Disable selfie cam
-            # Enable forward cam
-            # Display forward cam preview
+            self.slfPreviewProcess.terminate()
+            # Enable forward cam and Display forward cam preview
+            self.fwdPreviewProcess = subprocess.Popen(['libcamera-hello', '-t', '0', '--camera', constants.FWD_CAM_ID])
+
+        # PIC OR VID    
         if (self.capture_mode == CaptureMode.PICTURE):
             capture_text = self.font.render('Picture Mode', True, (211,198,170))
             capture_rect = capture_text.get_rect()

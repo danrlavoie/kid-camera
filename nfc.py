@@ -23,11 +23,11 @@ class NFC():
 
     # pick path is the filepath for pictures for the current NFC card (or default)
     @property
-    def pic_path(self):
-        return self._pic_path
-    @pic_path.setter
-    def pic_path(self, value):
-        self._pic_path = value
+    def cur_album_path(self):
+        return self._cur_album_path
+    @cur_album_path.setter
+    def cur_album_path(self, value):
+        self._cur_album_path = value
 
     # Store the current position for each gallery or else use 0
     @property
@@ -49,9 +49,9 @@ class NFC():
         if (not os.path.exists(self.base_dir)):
             os.makedirs(self.base_dir)
         # Then see if a subdir for this nfc id doesn't exist
-        if not (os.path.exists(self._pic_path)):
+        if not (os.path.exists(self._cur_album_path)):
             # Create the folder
-            os.makedirs(self._pic_path)
+            os.makedirs(self._cur_album_path)
 
     def activate_id(self, id):
         """
@@ -62,7 +62,7 @@ class NFC():
         @param id the id of the NFC card to activate, or the string 'default'
         """
         self._id = id
-        self._pic_path = os.path.join(self.base_dir, self._id)
+        self._cur_album_path = os.path.join(self.base_dir, self._id)
         self.maybe_create_picture_directory()
         self._position = 0
 
@@ -79,17 +79,17 @@ class NFC():
     def load_image(self):
         """
         load_image grabs the filename and extension for the file in the current
-        gallery _pic_path filepath, at the current _position index in the file
+        gallery _cur_album_path filepath, at the current _position index in the file
         list, and returns them.
         The function is called load_image, but it'll load any kind of file, so
         be careful to only store images or videos in these folders.
         """
-        current_gallery_files = [name for name in os.listdir(self._pic_path) if os.path.isfile(os.path.join(self._pic_path,name))]
+        current_gallery_files = [name for name in os.listdir(self._cur_album_path) if os.path.isfile(os.path.join(self._cur_album_path,name))]
         # This will fail if the directory has no pictures in it
         filename = current_gallery_files[self._position]
         extension = pathlib.Path(filename).suffix
         return {
-            "filename": os.path.join(self._pic_path,filename),
+            "filename": os.path.join(self._cur_album_path,filename),
             "extension": extension
         }
 
@@ -99,7 +99,7 @@ class NFC():
         directory by incrementing or decrementing the _position variable.
         @param direction a Direction enum, either Direction.FWD or Direction.REV
         """
-        self.gallery_size = len([name for name in os.listdir(self._pic_path) if os.path.isfile(os.path.join(self._pic_path,name))])
+        self.gallery_size = len([name for name in os.listdir(self._cur_album_path) if os.path.isfile(os.path.join(self._cur_album_path,name))])
         if direction == Direction.FWD:
             self._position += 1
             if self._position >= self.gallery_size:
@@ -111,7 +111,7 @@ class NFC():
         
 
 if __name__ == '__main__':
-    nfc = NFC(constants.BASE_PIC_PATH)
+    nfc = NFC(constants.BASE_ALBUM_PATH)
     image = nfc.load_image()
     cv2.namedWindow('pic-display', cv2.WINDOW_NORMAL )
     cv2.setWindowProperty('pic-display', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)

@@ -13,6 +13,10 @@ class MyApp():
         self.cam.start_preview(Preview.QTGL)
         self.cam.start()
         time.sleep(3)
+        self.cam.start_preview(Preview.NULL)
+        time.sleep(3)
+        self.cam.start_preview(Preview.QTGL)
+        time.sleep(3)
 
 
 if __name__ == "__main__":

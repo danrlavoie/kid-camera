@@ -20,16 +20,12 @@ class CameraApp():
         # First, Pygame setup
         fullscreen = constants.FULLSCREEN
         pygame.init()
-        pygame.camera.init()
         self.font = pygame.font.Font('SauceCodeProNerdFont-Regular.ttf', 32)
         if fullscreen == 1:
             self.canvas = pygame.display.set_mode((640, 480), pygame.FULLSCREEN)
         else:
             self.canvas = pygame.display.set_mode((640, 480))
         self.clock = pygame.time.Clock()
-
-        self.camlist = pygame.camera.list_cameras()
-        print(self.camlist)
 
         # Next, set up state variables
         self.running = True                         # Is the app running or not?

@@ -172,18 +172,20 @@ class CameraApp():
             camera_rect.center = (500, 300)
             self.canvas.blit(camera_text, camera_rect)
             # Disable forward cam
-            self.fwdPreviewProcess.terminate()
+            if self.previewProcess is not None:
+                self.previewProcess.terminate()
             # Enable selfie cam and Display selfie cam preview
-            self.slfPreviewProcess = subprocess.Popen(['libcamera-hello', '-t', '0', '--camera', constants.SELFIE_CAM_ID])
+            self.previewProcess = subprocess.Popen(['libcamera-hello', '-t', '0', '--camera', constants.SELFIE_CAM_ID])
         else:
             camera_text = self.font.render('Forward Cam', True, (211,198,170))
             camera_rect = camera_text.get_rect()
             camera_rect.center = (500, 300)
             self.canvas.blit(camera_text, camera_rect)
             # Disable selfie cam
-            self.slfPreviewProcess.terminate()
+            if self.previewProcess is not None:
+                self.previewProcess.terminate()
             # Enable forward cam and Display forward cam preview
-            self.fwdPreviewProcess = subprocess.Popen(['libcamera-hello', '-t', '0', '--camera', constants.FWD_CAM_ID])
+            self.previewProcess = subprocess.Popen(['libcamera-hello', '-t', '0', '--camera', constants.FWD_CAM_ID])
 
         # PIC OR VID    
         if (self.capture_mode == CaptureMode.PICTURE):
@@ -285,6 +287,7 @@ class CameraApp():
             if self.capture_mode == CaptureMode.PICTURE:
                 print("TOOK A PICTURE!")
                 # Take a pic with current self.camera
+
             else:
                 self.recording = True
                 print("STARTED A RECORDING!")

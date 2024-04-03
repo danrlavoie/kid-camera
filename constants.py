@@ -10,5 +10,7 @@ FOURPOS_D_ID=16
 
 FULLSCREEN=1
 
-SELFIE_CAM_ID = 0
-FWD_CAM_ID = 1
+#phrased as strings to pass to terminal command
+SELFIE_CAM_ID = '0'
+# @TODO this will need to be 1 with 2 cams installed
+FWD_CAM_ID = '0' 

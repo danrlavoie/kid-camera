@@ -26,7 +26,7 @@ class MyApp():
         
         self.cam.start_preview(Preview.QTGL)
         encoder = H264Encoder()
-        self.cam.start_recording(encoder, '/home/me691kidcam/kid-camera/temp/test.h264')
+        self.cam.start_recording(encoder, '/home/me691kidcam/kid-camera/pics/temp/test.h264')
         time.sleep(3)
         self.cam.stop_recording()
 

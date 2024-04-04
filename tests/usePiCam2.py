@@ -5,6 +5,7 @@ import time
 import datetime
 import os.path
 from picamera2.encoders import H264Encoder
+import cv2
 
 class MyApp():
     def __init__(self):
@@ -23,6 +24,9 @@ class MyApp():
 
         self.cam.stop_preview()
         time.sleep(3)
+        cv2.imshow('image', cv2.imread(filepath))
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
         
         self.cam.start_preview(Preview.QTGL)
         encoder = H264Encoder()

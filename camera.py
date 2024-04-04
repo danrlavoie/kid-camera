@@ -1,10 +1,13 @@
 import cv2
 import pygame
-import pygame.camera
 from datetime import datetime, timedelta
 import sys
-# libcamera, libcamera-vid
 import subprocess
+
+from picamera2 import Picamera2, Preview
+from picamera2.encoders import H264Encoder
+import os.path
+
 
 from nfc import NFC
 from gpioinput import GPIOInput
@@ -22,17 +25,17 @@ class CameraApp():
         fullscreen = constants.FULLSCREEN
         pygame.init()
         self.font = pygame.font.Font('SauceCodeProNerdFont-Regular.ttf', 32)
-        if fullscreen == 1:
-            self.canvas = pygame.display.set_mode((640, 480), pygame.FULLSCREEN)
-        else:
-            self.canvas = pygame.display.set_mode((640, 480))
+        # if fullscreen == 1:
+        #     self.canvas = pygame.display.set_mode((640, 480), pygame.FULLSCREEN)
+        # else:
+        #     self.canvas = pygame.display.set_mode((640, 480))
         self.clock = pygame.time.Clock()
 
         # Next, set up state variables
         self.running = True                         # Is the app running or not?
         self.playing_video_file = None              # If a video is playing on the screen, which video is it
         self.playing_video_fps = -1                 # What is the frames-per-second of the current video file
-        self.camera = Camera.SELFIE                 # Whether selfie or forward facing camera is active
+        self.camera_mode = Camera.SELFIE                 # Whether selfie or forward facing camera is active
         self.capture_mode = CaptureMode.PICTURE     # Whether camera is recording pictures or video
         self.display_mode = DisplayMode.GALLERY     # Whether screen is showing camera or gallery
         self.active_pos = SelectorPosition.ONE      # Active position on the mode selector
@@ -41,8 +44,24 @@ class CameraApp():
         self.last_capture_timestamp = datetime.min  # The timestamp at which the last image was taken
         self.last_interaction = datetime.now        # The timestamp at which the last button press occurred
 
-        #set up subprocess handlers
-        self.previewProcess = None                  # For running libcamera-hello
+        self.slf_prev_running = False
+        self.fwd_prev_running = False
+
+        self.slf_cam = Picamera2(0)
+        self.slf_preview_config = self.slf_cam.create_preview_configuration()
+        self.slf_cam.configure(self.slf_preview_config)
+        """
+        In picamera2, the autofocus trigger is controlled by picam2.set_controls, 
+        {"AfMode": 0 ,"LensPosition": focus value} for manual focus and 
+        {"AfMode": 1 ,"AfTrigger": 0} for single autofocus and 
+        {"AfMode": 2 ,"AfTrigger": 0} for continuous autofocus.
+        Every time you set the focus, you need to set the focus mode
+        """
+        self.slf_cam.set_controls({"AfMode": 1 ,"AfTrigger": 0})
+
+        # self.fwd_cam = Picamera2(1)
+        # self.fwd_preview_config = self.slf_cam.create_preview_configuration()
+        # self.slf_cam.configure(self.slf_preview_config)
 
         # Finally, set up the additional modules that plug into the main class
         self.nfc = NFC(constants.BASE_ALBUM_PATH)
@@ -58,7 +77,7 @@ class CameraApp():
         while (self.running):
             self.clock.tick(self.playing_video_fps)
             # clear the canvas from the previous frame
-            self.canvas.fill((92,106,114))
+            # self.canvas.fill((92,106,114))
             if (not self.recording):
                 self.set_current_mode()
             else:
@@ -88,16 +107,16 @@ class CameraApp():
         """
         position = self.input.active_pos(override=self.pos_override)
         if position == SelectorPosition.ONE:
-            self.camera = Camera.SELFIE
+            self.camera_mode = Camera.SELFIE
             self.capture_mode = CaptureMode.PICTURE
         elif position == SelectorPosition.TWO:
-            self.camera = Camera.SELFIE
+            self.camera_mode = Camera.SELFIE
             self.capture_mode = CaptureMode.VIDEO
         elif position == SelectorPosition.THREE:
-            self.camera = Camera.FORWARD
+            self.camera_mode = Camera.FORWARD
             self.capture_mode = CaptureMode.PICTURE
         elif position == SelectorPosition.FOUR:
-            self.camera = Camera.FORWARD
+            self.camera_mode = Camera.FORWARD
             self.capture_mode = CaptureMode.VIDEO
         if (not position == self.active_pos):
             # This checks if we've changed 4pos modes
@@ -142,7 +161,7 @@ class CameraApp():
         if (not extension == ".mp4"):
             image = pygame.image.load(filename)
             image = pygame.transform.scale(image, (640, 480))
-            self.canvas.blit(image, dest = (0,0))
+            # self.canvas.blit(image, dest = (0,0))
         # If a video, make sure it loops
         else:
             if (not self.playing_video_file):
@@ -152,7 +171,7 @@ class CameraApp():
             if success:
                 video_surf = pygame.image.frombuffer(video_image.tobytes(), video_image.shape[1::-1], "RGB")
                 video_surf = pygame.transform.scale(video_surf, (640,480))
-                self.canvas.blit(video_surf, (0,0))
+                # self.canvas.blit(video_surf, (0,0))
             else:
                 # Likely the end of the video frame, loop back to start
                 self.playing_video_file.set(cv2.CAP_PROP_POS_FRAMES, 0)
@@ -169,47 +188,24 @@ class CameraApp():
         indicator is displayed overlaying the screen.
         """
         #SELFIE OR FWD
-        if (self.camera == Camera.SELFIE):
-            camera_text = self.font.render('Selfie Cam', True, (211,198,170))
-            camera_rect = camera_text.get_rect()
-            camera_rect.center = (500, 300)
-            self.canvas.blit(camera_text, camera_rect)
+        if (self.camera_mode == Camera.SELFIE):
             # Disable forward cam
-            if self.previewProcess is not None:
-                self.previewProcess.terminate()
-            self.canvas = pygame.display.set_mode((640, 480), pygame.HIDDEN)
+            ##self.fwd_cam.stop_preview()
+            ##self.fwd_cam.stop()
             # Enable selfie cam and Display selfie cam preview
-            self.previewProcess = subprocess.Popen(['libcamera-hello', '-t', '0', '--camera', constants.SELFIE_CAM_ID])
+            if(False == self.slf_prev_running):
+                print("start selfie preview")
+                self.slf_cam.start_preview(Preview.QTGL)
+                self.slf_prev_running = True
         else:
-            camera_text = self.font.render('Forward Cam', True, (211,198,170))
-            camera_rect = camera_text.get_rect()
-            camera_rect.center = (500, 300)
-            self.canvas.blit(camera_text, camera_rect)
             # Disable selfie cam
-            if self.previewProcess is not None:
-                self.previewProcess.terminate()
-            self.canvas = pygame.display.set_mode((640, 480), pygame.HIDDEN)
+            self.slf_cam.stop_preview()
+            self.slf_cam.stop()
             # Enable forward cam and Display forward cam preview
-            self.previewProcess = subprocess.Popen(['libcamera-hello', '-t', '0', '--camera', constants.FWD_CAM_ID])
-
-        # PIC OR VID    
-        if (self.capture_mode == CaptureMode.PICTURE):
-            capture_text = self.font.render('Picture Mode', True, (211,198,170))
-            capture_rect = capture_text.get_rect()
-            capture_rect.center = (150, 300)
-            self.canvas.blit(capture_text, capture_rect)
-        else:
-            capture_text = self.font.render('Video Mode', True, (211,198,170))
-            capture_rect = capture_text.get_rect()
-            capture_rect.center = (150, 300)
-            self.canvas.blit(capture_text, capture_rect)
-        if (self.recording):
-            recording_text = self.font.render('RECORDING', True, (211,198,170))
-            recording_rect = recording_text.get_rect()
-            recording_rect.center = (500, 100)
-            self.canvas.blit(recording_text, recording_rect)
-            # If recording a video, can show indicator
-
+            if(False == self.fwd_prev_running):
+                print("fake start fwd preview")
+            #     self.fwd_cam.start_preview(Preview.QTGL)
+                self.swd_prev_running = True
 
     def handle_events(self):
         """

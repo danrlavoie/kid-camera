@@ -5,6 +5,7 @@ import pygame
 from datetime import datetime, timedelta
 import sys
 # libcamera, libcamera-vid
+import os.path
 
 from nfc import NFC
 from gpioinput import GPIOInput

@@ -29,8 +29,8 @@ class GPIOInput():
         self.pygame_event_fn = pygame_event_fn
         self.encoder_event_key = encoder_event_key
         self.capture_event_key = capture_event_key
-        self.encoder = RotaryEncoder(constants.ENCODER_INPUT_A_ID, constants.ENCODER_INPUT_B_ID, bounce_time=0.2, wrap=True)
-        self.capture_button = Button(constants.CAPTURE_BUTTON_ID, bounce_time=0.2)
+        self.encoder = RotaryEncoder(constants.ENCODER_INPUT_A_ID, constants.ENCODER_INPUT_B_ID, bounce_time=0.1, wrap=True)
+        self.capture_button = Button(constants.CAPTURE_BUTTON_ID, bounce_time=0.1)
         self.selector_a = Button(constants.FOURPOS_A_ID)
         self.selector_b = Button(constants.FOURPOS_B_ID)
         self.selector_c = Button(constants.FOURPOS_C_ID)

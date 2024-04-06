@@ -168,7 +168,7 @@ class CameraApp():
         res = self.nfc.load_image()
         filename = res["filename"]
         extension = res["extension"]
-        if (not extension == ".mp4"):
+        if (not extension == ".h264"):
             image = pygame.image.load(filename)
             image = pygame.transform.scale(image, (640, 480))
             self.canvas.blit(image, dest = (0,0))
@@ -179,7 +179,7 @@ class CameraApp():
                 self.playing_video_fps = self.playing_video_file.get(cv2.CAP_PROP_FPS)
             success, video_image = self.playing_video_file.read()
             if success:
-                video_surf = pygame.image.frombuffer(video_image.tobytes(), video_image.shape[1::-1], "BGR")
+                video_surf = pygame.image.frombuffer(video_image.tobytes(), video_image.shape[1::-1], "RGBA")
                 video_surf = pygame.transform.scale(video_surf, (640,480))
                 self.canvas.blit(video_surf, (0,0))
             else:
@@ -198,9 +198,9 @@ class CameraApp():
         indicator is displayed overlaying the screen.
         """
         preview_image = self.get_active_picamera_device().capture_array()
-        pygame_image = pygame.image.frombuffer(preview_image, preview_image.shape[1::-1], "BGR")
-        pygame_image = pygame.transform.scale(image, (640,480))
-        self.canvas.blit(image, dest = (0,0))
+        pygame_image = pygame.image.frombuffer(preview_image, preview_image.shape[1::-1], "RGBA")
+        pygame_image = pygame.transform.scale(pygame_image, (640,480))
+        self.canvas.blit(pygame_image, dest = (0,0))
 
         if (self.camera == Camera.SELFIE):
             # Display selfie cam preview
@@ -307,18 +307,23 @@ class CameraApp():
         """
         self.last_interaction = datetime.now()
         self.last_capture_timestamp = datetime.now()
+        formatted_timestamp = self.last_capture_timestamp.strftime("%Y%m%d%H%M%S%f")
         if self.display_mode == DisplayMode.GALLERY:
             self.display_mode = DisplayMode.CAPTURE
         else:
             if self.capture_mode == CaptureMode.PICTURE:
                 print("TOOK A PICTURE!")
                 # Take a pic with current self.camera
-                self.get_active_picamera_device().capture_file("pizza.jpeg")
+                filename = os.path.join(self.nfc.pic_path, formatted_timestamp)
+                filename += ".jpeg"
+                self.get_active_picamera_device().capture_file(filename)
             else:
                 self.recording = True
                 print("STARTED A RECORDING!")
                 # Take a video with current self.camera
-                self.get_active_picamera_device().start_recording(encoder, "cake.h264")
+                filename = os.path.join(self.nfc.pic_path, formatted_timestamp)
+                filename += ".h264"
+                self.get_active_picamera_device().start_recording(encoder, filename)
 
     def action_selector_change(self, pos=None):
         """

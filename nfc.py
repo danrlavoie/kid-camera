@@ -1,3 +1,4 @@
+import logging
 import os
 import pathlib
 import cv2
@@ -5,6 +6,7 @@ import cv2
 from kctypes import Direction
 import constants
 
+logger = logging.getLogger(__name__)
 # Takes care of setting up a specialized picture directory for an NFC card
 # Given an NFC identifier, when it's initialized, it makes a directory,
 # if one doesn't already exist, for the given NFC card, in the base picture dir.
@@ -35,8 +37,10 @@ class NFC():
         return self._position
 
     def __init__(self, base_dir, id="default"):
+        logger.debug('Function NFC __init__')
+        logger.debug('Received %s as base_dir for NFC card', base_dir)
+        logger.debug('Received %s as id for NFC card', id)
         self.base_dir = base_dir
-        print("Hello, NFC #" + id)
         self.activate_id(id)
 
     def maybe_create_picture_directory(self):
@@ -45,11 +49,16 @@ class NFC():
         a directory within the base directory to match the current pic path.
         If it checks and the directory already exists, it does nothing.
         """
+        logger.debug('Function maybe_create_picture_directory')
         # Confirm that the base picture directory exists
         if (not os.path.exists(self.base_dir)):
+            logger.info('Did not find directory %s', self.base_dir)
+            logger.info('Creating directory %s', self.base_dir)
             os.makedirs(self.base_dir)
         # Then see if a subdir for this nfc id doesn't exist
         if not (os.path.exists(self._pic_path)):
+            logger.info('Did not find directory %s', self._pic_path)
+            logger.info('Creating directory %s', self._pic_path)
             # Create the folder
             os.makedirs(self._pic_path)
 
@@ -61,9 +70,12 @@ class NFC():
         files in gallery mode.
         @param id the id of the NFC card to activate, or the string 'default'
         """
+        logger.debug('Function activate_id')
         self._id = id
         self._pic_path = os.path.join(self.base_dir, self._id)
+        logger.info('Ensuring that combined filepath %s exists for usage', self._pic_path)
         self.maybe_create_picture_directory()
+        logger.info('Setting gallery file index to 0')
         self._position = 0
 
     def deactivate_id(self):
@@ -74,6 +86,7 @@ class NFC():
         When no NFC card is connected to the system, teh default directory is
         used to store gallery files.
         """
+        logger.debug('Function deactivate_id')
         self.activate_id("default")
 
     def load_image(self):
@@ -84,10 +97,14 @@ class NFC():
         The function is called load_image, but it'll load any kind of file, so
         be careful to only store images or videos in these folders.
         """
+        logger.debug('Function load_image')
+        logger.debug('Fetching list of files in the gallery directory')
         current_gallery_files = [name for name in os.listdir(self._pic_path) if os.path.isfile(os.path.join(self._pic_path,name))]
         # This will fail if the directory has no pictures in it
+        logger.debug('Fetching filename of file at position %s', self._position)
         filename = current_gallery_files[self._position]
         extension = pathlib.Path(filename).suffix
+        logger.info('Found filename %s with extension %s', filename, extension)
         return {
             "filename": os.path.join(self._pic_path,filename),
             "extension": extension
@@ -99,15 +116,21 @@ class NFC():
         directory by incrementing or decrementing the _position variable.
         @param direction a Direction enum, either Direction.FWD or Direction.REV
         """
+        logger.debug('Function gallery_scroll')
+        logger.debug('Calculating current size of list of files in the gallery directory')
         self.gallery_size = len([name for name in os.listdir(self._pic_path) if os.path.isfile(os.path.join(self._pic_path,name))])
         if direction == Direction.FWD:
+            logger.debug('Moving forward in gallery')
             self._position += 1
             if self._position >= self.gallery_size:
                 self._position = 0
+            logger.info('New file index is %s', self._position)
         else:
+            logger.debug('Moving backward in gallery')
             self._position -= 1
             if self._position <0:
                 self._position = self.gallery_size - 1
+            logger.info('New file index is %s', self._position)
         
 
 if __name__ == '__main__':

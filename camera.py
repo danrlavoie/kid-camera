@@ -1,11 +1,13 @@
 import cv2
+from datetime import datetime, timedelta
+# libcamera, libcamera-vid
+import logging
+import os.path
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
+from picamera2.output import FfmpegOutput
 import pygame
-from datetime import datetime, timedelta
 import sys
-# libcamera, libcamera-vid
-import os.path
 
 from nfc import NFC
 from gpioinput import GPIOInput
@@ -21,11 +23,14 @@ CAPTURE_PRESSED = pygame.USEREVENT + 2
 cam_selfie = Picamera2(0)
 cam_forward = Picamera2(1)
 encoder = H264Encoder(10000000)
+logger = logging.getLogger(__name__)
 
 class CameraApp():
     def __init__(self):
+        logger.debug('Function CameraApp __init__')
         # First, Pygame setup
         fullscreen = constants.FULLSCREEN
+        logger.info('Initializing pygame')
         pygame.init()
         self.font = pygame.font.Font('SauceCodeProNerdFont-Regular.ttf', 32)
         if fullscreen == 1:
@@ -33,6 +38,7 @@ class CameraApp():
         else:
             self.canvas = pygame.display.set_mode((640, 480))
         self.clock = pygame.time.Clock()
+        logger.info('pygame configuration complete')
 
         # Next, set up state variables
         self.running = True                         # Is the app running or not?
@@ -47,9 +53,11 @@ class CameraApp():
         self.last_capture_timestamp = datetime.min  # The timestamp at which the last image was taken
         self.last_interaction = datetime.now        # The timestamp at which the last button press occurred
 
+        logger.info('Starting up initial camera')
         # Then, set up the first camera to get started
         cam_selfie.start()
 
+        logger.info('Initializing plugin modules')
         # Finally, set up the additional modules that plug into the main class
         self.nfc = NFC(constants.BASE_PIC_PATH)
         self.input = GPIOInput(self.post_custom_event, ENCODER_ROTATED, CAPTURE_PRESSED)
@@ -61,6 +69,7 @@ class CameraApp():
         the screen, handles any new events, and then loops to start again.
         It will run indefinitely as long as the running var is true.
         """
+        logger.debug('Function run')
         while (self.running):
             self.clock.tick(self.playing_video_fps)
             # clear the canvas from the previous frame
@@ -71,10 +80,10 @@ class CameraApp():
                 # If recording, see if it's time to stop recording
                 delta = datetime.now() - self.last_capture_timestamp
                 if (delta > presentation_timeout):
+                    logger.info('End of recording - directing camera to stop recording')
                     self.recording = False
                     # Save the recording to a file
-                    print("Finished recording!")
-                    self.get_active_picamera_device().stop_recording()
+                    self.get_active_picamera_device().stop_encoder()
             self.handle_nfc_card()
             if (self.display_mode == DisplayMode.GALLERY):
                 self.render_gallery()
@@ -91,9 +100,12 @@ class CameraApp():
         get_active_picamera_device is a quick helper to give you the correct
         picamera2 camera reference, given the program's camera selection.
         """
+        logger.debug('Function get_active_picamera_device')
         if (self.camera == Camera.SELFIE):
+            logger.debug('Returning reference to selfie cam')
             return cam_selfie
         else:
+            logger.debug('Returning reference to forward cam')
             return cam_forward
 
     def set_current_mode(self):
@@ -104,6 +116,7 @@ class CameraApp():
         also checks whether the mode has changed since the last frame, and uses
         that check to determine if the app needs to be in capture mode.
         """
+        logger.debug('Function set_current_mode')
         position = self.input.active_pos(override=self.pos_override)
         # Get the pre-existing camera.
         # If it ends up changing during this function, tell the app to switch
@@ -126,13 +139,16 @@ class CameraApp():
             # This checks if we've changed 4pos modes
             # If so, we should ensure we are in capture mode
             # Otherwise we have no way to return from gallery
+            logger.info('Switching to Capture Mode')
             self.active_pos = position
             self.display_mode = DisplayMode.CAPTURE
         if (not prev_camera == self.camera):
             if (self.camera == Camera.SELFIE):
+                logger.info('Switching to selfie cam')
                 cam_forward.close()
                 cam_selfie.start()
             else:
+                logger.info('Switching to forward cam')
                 cam_selfie.close()
                 cam_forward.start()
 
@@ -143,14 +159,17 @@ class CameraApp():
         deactivates any current NFC card if none is found. This function does
         nothing if the detected state matches the preexisting NFC state.
         """
+        logger.debug('Function handle_nfc_card')
         # Look for an NFC card - if found, check that it is active
         found_nfc = None
         if (found_nfc):
+            logger.info('Found an NFC card in the hardware')
             if not (found_nfc == self.nfc.id):
                 self.nfc.activate_id(found_nfc)
         # If none found, deactivate it
         else:
             if (not self.nfc.id == "default"):
+                logger.info('Deactivating current NFC card association and returning to default directory')
                 self.nfc.deactivate_id()
 
     def render_gallery(self):
@@ -165,25 +184,30 @@ class CameraApp():
         The video is also scaled to device size and rendered onto the canvas.
         When a video finishes playing, it will loop continuously.
         """
+        logger.debug('Function render_gallery')
         # Get and display image at current position
         res = self.nfc.load_image()
         filename = res["filename"]
         extension = res["extension"]
-        if (not extension == ".h264"):
+        if (not extension == ".h264") and (not extension == ".mp4"):
+            logger.info('Creating and blitting pygame image from image file %s', filename)
             image = pygame.image.load(filename)
             image = pygame.transform.scale(image, (640, 480))
             self.canvas.blit(image, dest = (0,0))
         # If a video, make sure it loops
         else:
             if (not self.playing_video_file):
+                logger.info('Starting playback of video file %s', filename)
                 self.playing_video_file = cv2.VideoCapture(filename)
                 self.playing_video_fps = self.playing_video_file.get(cv2.CAP_PROP_FPS)
             success, video_image = self.playing_video_file.read()
             if success:
-                video_surf = pygame.image.frombuffer(video_image.tobytes(), video_image.shape[1::-1], "RGBA")
+                logger.info('Creating and blitting pygame image from video file buffer')
+                video_surf = pygame.image.frombuffer(video_image.tobytes(), video_image.shape[1::-1], "RGB")
                 video_surf = pygame.transform.scale(video_surf, (640,480))
                 self.canvas.blit(video_surf, (0,0))
             else:
+                logger.info('Video file read did not succeed - Resetting to frame 0 to restart playback')
                 # Likely the end of the video frame, loop back to start
                 self.playing_video_file.set(cv2.CAP_PROP_POS_FRAMES, 0)
  
@@ -198,11 +222,15 @@ class CameraApp():
         Then, it checks if the device is actively recording a video - if so, an
         indicator is displayed overlaying the screen.
         """
+        logger.debug('Function render_camera_feed')
+        logger.info('Capturing camera image preview from active camera')
         preview_image = self.get_active_picamera_device().capture_array()
+        logger.info('Creating and blitting pygame image from image buffer')
         pygame_image = pygame.image.frombuffer(preview_image, preview_image.shape[1::-1], "RGBA")
         pygame_image = pygame.transform.scale(pygame_image, (640,480))
         self.canvas.blit(pygame_image, dest = (0,0))
 
+        logger.debug('Rendering camera feed debug text onto screen')
         if (self.camera == Camera.SELFIE):
             # Display selfie cam preview
             camera_text = self.font.render('Selfie Cam', True, (211,198,170))
@@ -245,6 +273,7 @@ class CameraApp():
         - Numbers 1-4 to override the mode switching feature in the gpiozero
           inputs.
         """
+        logger.debug('Function handle_events')
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -287,10 +316,13 @@ class CameraApp():
         state.
         @param dir the Direction to rotate, either FWD (clockwise) or REV.
         """
+        logger.debug('Function action_rotate_encoder')
         self.last_interaction = datetime.now()
         if self.display_mode == DisplayMode.CAPTURE:
+            logger.info('Switching display mode to Gallery')
             self.display_mode = DisplayMode.GALLERY
         else:
+            logger.info('Scrolling to new image and resetting any playing video file association')
             # Increment or decrement current gallery position (with wrapping)
             self.nfc.gallery_scroll(dir)
             self.playing_video_file = None
@@ -306,25 +338,31 @@ class CameraApp():
         so that timed events like the end of a video recording or the
         end of a picture presentation can be set up.
         """
+        logger.debug('Function action_capture')
         self.last_interaction = datetime.now()
         self.last_capture_timestamp = datetime.now()
         formatted_timestamp = self.last_capture_timestamp.strftime("%Y%m%d%H%M%S%f")
         if self.display_mode == DisplayMode.GALLERY:
+            logger.info('Switching display mode to Capture')
             self.display_mode = DisplayMode.CAPTURE
         else:
             if self.capture_mode == CaptureMode.PICTURE:
-                print("TOOK A PICTURE!")
                 # Take a pic with current self.camera
                 filename = os.path.join(self.nfc.pic_path, formatted_timestamp)
                 filename += ".jpeg"
+                logger.info('Instructing active camera to save image to %s', filename)
                 self.get_active_picamera_device().capture_file(filename)
             else:
+                logger.info('Setting recording state to true')
                 self.recording = True
-                print("STARTED A RECORDING!")
                 # Take a video with current self.camera
                 filename = os.path.join(self.nfc.pic_path, formatted_timestamp)
-                filename += ".h264"
-                self.get_active_picamera_device().start_recording(encoder, filename)
+                # filename += ".h264"
+                # self.get_active_picamera_device().start_recording(encoder, filename)
+                filename += ".mp4"
+                logger.info('Instructing active camera to start recording video to %s', filename)
+                output = FfmpegOutput(filename)
+                self.get_active_picamera_device().start_recording(encoder, output)
 
     def action_selector_change(self, pos=None):
         """
@@ -336,6 +374,7 @@ class CameraApp():
         will work again.
         @param pos a SelectorPosition to use, or None.
         """
+        logger.debug('Function action_selector_change')
         self.last_interaction = datetime.now()
         self.pos_override = pos
     def post_custom_event(self, event_key, **attributes):

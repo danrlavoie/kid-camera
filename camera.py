@@ -1,17 +1,22 @@
-import cv2
+# Python std library imports
 from datetime import datetime, timedelta
-# libcamera, libcamera-vid
 import logging
 import os.path
+import sys
+
+# 3rd party imports
+import cv2
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
 from picamera2.outputs import FfmpegOutput
+import psutil
 import pygame
-import sys
 
+# Local imports
 from album import Album
 from gpioinput import GPIOInput
 from kctypes import Camera, CaptureMode, DisplayMode, SelectorPosition, Direction
+from icon import get_random_color, get_icon
 import constants
 
 # A timeout of how long to show an image/gif after it finishes
@@ -19,11 +24,14 @@ presentation_timeout = timedelta(seconds = 5)
 # Custom event IDs for hardware in pygame
 ENCODER_ROTATED = pygame.USEREVENT + 1
 CAPTURE_PRESSED = pygame.USEREVENT + 2
-
+# Picamera objects
 cam_forward = Picamera2(constants.CAM_FWD_ID)
 cam_selfie = Picamera2(constants.CAM_SLF_ID)
-
 encoder = H264Encoder(10000000)
+# psutil battery sensor
+battery = psutil.sensors_battery()
+
+
 logger = logging.getLogger(__name__)
 
 # Helper shorthand for fetching an asset
@@ -103,6 +111,7 @@ class CameraApp():
                 self.render_gallery()
             else:
                 self.render_camera_feed()
+            self.render_battery_icon()
             self.handle_events()
             pygame.display.flip()
         # If not running anymore, quit the app
@@ -251,6 +260,7 @@ class CameraApp():
         pygame_image = pygame.transform.scale(pygame_image, (640,480))
         self.canvas.blit(pygame_image, dest = (0,0))
 
+        """
         logger.debug('Rendering camera feed debug text onto screen')
         if (self.camera == Camera.SELFIE):
             # Display selfie cam preview
@@ -280,7 +290,30 @@ class CameraApp():
             recording_rect.center = (500, 100)
             self.canvas.blit(recording_text, recording_rect)
             # If recording a video, can show indicator
+        """
 
+    def render_battery_icon(self):
+        plugged = battery.power_plugged
+        percent = battery.percent
+        if (plugged):
+            image = icon(constants.ICON_BATTERY_CHARGING)
+            color = (0,255,150)
+        elif (percent > 70):
+            image = icon(constants.ICON_BATTERY_FULL)
+            color = (0,255,0)
+        elif (percent > 40):
+            image = icon(constants.ICON_BATTERY_MED)
+            color = (150,150,0)
+        elif (percent > 15):
+            image = icon(constants.ICON_BATTERY_LOW)
+            color = (255,150,0)
+        else:
+            image = icon(constants.ICON_BATTERY_WARNING)
+            color = (255,0,0)
+        battery_icon = pygame.image.load(image)
+        battery_icon = battery_icon.fill(color, special_flags=pygame.BLEND_ADD)
+        battery_icon = pygame.transform.scale(battery_icon, (80, 80))
+        self.canvas.blit(battery_icon, (280, 0))
 
     def handle_events(self):
         """

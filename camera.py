@@ -2,6 +2,7 @@
 from datetime import datetime, timedelta
 import logging
 import os.path
+import subprocess
 import sys
 
 # 3rd party imports
@@ -61,6 +62,7 @@ class CameraApp():
 
         # Next, set up state variables
         self.running = True                         # Is the app running or not?
+        self.shut_down_everything = False           # Are we intending to shut down the computer when we close?
         self.playing_video_file = None              # If a video is playing on the screen, which video is it
         self.playing_video_fps = -1                 # What is the frames-per-second of the current video file
         self.camera = Camera.SELFIE                 # Whether selfie or forward facing camera is active
@@ -117,6 +119,8 @@ class CameraApp():
         # If not running anymore, quit the app
         self.get_active_picamera_device().close()
         pygame.quit()
+        if (self.shut_down_everything):
+            subprocess.run("shutdown")
 
     def get_active_picamera_device(self):
         """
@@ -354,6 +358,10 @@ class CameraApp():
                 # QUIT: q key
                 if event.key == pygame.K_q:
                     self.running = False
+                # SHUT DOWN EVERYTHING: p key
+                if event.key == pygame.K_p:
+                    self.running = False
+                    self.shut_down_everything = True
             if event.type == ENCODER_ROTATED:
                 self.action_rotate_encoder(event.dir)
             if event.type == CAPTURE_PRESSED:

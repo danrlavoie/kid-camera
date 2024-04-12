@@ -25,6 +25,7 @@ presentation_timeout = timedelta(seconds = 5)
 # Custom event IDs for hardware in pygame
 ENCODER_ROTATED = pygame.USEREVENT + 1
 CAPTURE_PRESSED = pygame.USEREVENT + 2
+CAPTURE_PRESSED_LONGTIME = pygame.USEREVENT + 3
 # Picamera objects
 cam_forward = Picamera2(constants.CAM_FWD_ID)
 cam_selfie = Picamera2(constants.CAM_SLF_ID)
@@ -84,7 +85,7 @@ class CameraApp():
         logger.info('Initializing plugin modules')
         # Finally, set up the additional modules that plug into the main class
         self.album = Album(constants.BASE_PIC_PATH)
-        self.input = GPIOInput(self.post_custom_event, ENCODER_ROTATED, CAPTURE_PRESSED)
+        self.input = GPIOInput(self.post_custom_event, ENCODER_ROTATED, CAPTURE_PRESSED, CAPTURE_PRESSED_LONGTIME)
 
     def run(self):
         """
@@ -366,6 +367,10 @@ class CameraApp():
                 self.action_rotate_encoder(event.dir)
             if event.type == CAPTURE_PRESSED:
                 self.action_capture()
+            # Longtime capture pressed is the same as a force shutdown
+            if event.type == CAPTURE_PRESSED_LONGTIME:
+                    self.running = False
+                    self.shut_down_everything = True
 
     def action_rotate_encoder(self, dir):
         """

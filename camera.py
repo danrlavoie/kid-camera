@@ -9,7 +9,7 @@ from picamera2.outputs import FfmpegOutput
 import pygame
 import sys
 
-from nfc import NFC
+from album import Album
 from gpioinput import GPIOInput
 from kctypes import Camera, CaptureMode, DisplayMode, SelectorPosition, Direction
 import constants
@@ -26,6 +26,15 @@ cam_selfie = Picamera2(constants.CAM_SLF_ID)
 encoder = H264Encoder(10000000)
 logger = logging.getLogger(__name__)
 
+# Helper shorthand for fetching an asset
+def audio(filename):
+    return os.path.join(constants.BASE_SOUND_PATH, filename)
+def font(filename):
+    return os.path.join(constants.BASE_FONT_PATH, filename)
+def icon(filename):
+    return os.path.join(constants.BASE_ICON_PATH, filename)
+
+
 class CameraApp():
     def __init__(self):
         logger.debug('Function CameraApp __init__')
@@ -33,12 +42,13 @@ class CameraApp():
         fullscreen = constants.FULLSCREEN
         logger.info('Initializing pygame')
         pygame.init()
-        self.font = pygame.font.Font('SauceCodeProNerdFont-Regular.ttf', 32)
+        self.font = pygame.font.Font(font(constants.CORE_FONT) , 32)
         if fullscreen == 1:
             self.canvas = pygame.display.set_mode((640, 480), pygame.FULLSCREEN)
         else:
             self.canvas = pygame.display.set_mode((640, 480))
         self.clock = pygame.time.Clock()
+
         logger.info('pygame configuration complete')
 
         # Next, set up state variables
@@ -63,7 +73,7 @@ class CameraApp():
 
         logger.info('Initializing plugin modules')
         # Finally, set up the additional modules that plug into the main class
-        self.nfc = NFC(constants.BASE_PIC_PATH)
+        self.album = Album(constants.BASE_PIC_PATH)
         self.input = GPIOInput(self.post_custom_event, ENCODER_ROTATED, CAPTURE_PRESSED)
 
     def run(self):

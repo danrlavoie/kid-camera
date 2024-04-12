@@ -19,9 +19,7 @@ presentation_timeout = timedelta(seconds = 5)
 # Custom event IDs for hardware in pygame
 ENCODER_ROTATED = pygame.USEREVENT + 1
 CAPTURE_PRESSED = pygame.USEREVENT + 2
-# Global picamera objects:
-cam_selfie = Picamera2(0)
-cam_forward = Picamera2(1)
+
 encoder = H264Encoder(10000000)
 logger = logging.getLogger(__name__)
 
@@ -54,7 +52,9 @@ class CameraApp():
         self.last_interaction = datetime.now        # The timestamp at which the last button press occurred
 
         logger.info('Starting up initial camera')
-        # Then, set up the first camera to get started
+        # Then, set up the first camera stuff to get started
+        cam_forward = Picamera2(constants.CAM_FWD_ID)
+        cam_selfie = Picamera2(constants.CAM_SLF_ID)
         cam_selfie.start()
 
         logger.info('Initializing plugin modules')
@@ -146,10 +146,12 @@ class CameraApp():
             if (self.camera == Camera.SELFIE):
                 logger.info('Switching to selfie cam')
                 cam_forward.close()
+                cam_selfie = Picamera2(constants.CAM_SLF_ID)
                 cam_selfie.start()
             else:
                 logger.info('Switching to forward cam')
                 cam_selfie.close()
+                cam_forward = Picamera2(constants.CAM_FWD_ID)
                 cam_forward.start()
 
     def handle_nfc_card(self):

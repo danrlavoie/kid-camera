@@ -5,7 +5,7 @@ import logging
 import os.path
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
-from picamera2.output import FfmpegOutput
+from picamera2.outputs import FfmpegOutput
 import pygame
 import sys
 
@@ -19,6 +19,9 @@ presentation_timeout = timedelta(seconds = 5)
 # Custom event IDs for hardware in pygame
 ENCODER_ROTATED = pygame.USEREVENT + 1
 CAPTURE_PRESSED = pygame.USEREVENT + 2
+
+cam_forward = Picamera2(constants.CAM_FWD_ID)
+cam_selfie = Picamera2(constants.CAM_SLF_ID)
 
 encoder = H264Encoder(10000000)
 logger = logging.getLogger(__name__)
@@ -56,6 +59,7 @@ class CameraApp():
         cam_forward = Picamera2(constants.CAM_FWD_ID)
         cam_selfie = Picamera2(constants.CAM_SLF_ID)
         cam_selfie.start()
+        cam_forward.close()
 
         logger.info('Initializing plugin modules')
         # Finally, set up the additional modules that plug into the main class
@@ -100,6 +104,9 @@ class CameraApp():
         get_active_picamera_device is a quick helper to give you the correct
         picamera2 camera reference, given the program's camera selection.
         """
+        global cam_forward
+        global cam_selfie
+
         logger.debug('Function get_active_picamera_device')
         if (self.camera == Camera.SELFIE):
             logger.debug('Returning reference to selfie cam')
@@ -116,6 +123,8 @@ class CameraApp():
         also checks whether the mode has changed since the last frame, and uses
         that check to determine if the app needs to be in capture mode.
         """
+        global cam_forward
+        global cam_selfie
         logger.debug('Function set_current_mode')
         position = self.input.active_pos(override=self.pos_override)
         # Get the pre-existing camera.

@@ -73,8 +73,8 @@ class GPIOInput():
         self.encoder.steps = 0
         self.encoder.when_rotated_clockwise = partial(pygame_event_fn, encoder_event_key, dir=Direction.FWD)
         self.encoder.when_rotated_counter_clockwise = partial(pygame_event_fn, encoder_event_key, dir=Direction.REV)
-        self.capture_button.when_held=button_was_held
-        self.capture_button.when_released=button_was_released
+        self.capture_button.when_held=self.button_was_held
+        self.capture_button.when_released=self.button_was_released
         logger.debug('GPIO input event callbacks initialized')
 if __name__ == "__main__":
     gpio = GPIOInput()

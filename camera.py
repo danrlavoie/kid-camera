@@ -199,13 +199,13 @@ class CameraApp():
         found_nfc = None
         if (found_nfc):
             logger.info('Found an NFC card in the hardware')
-            if not (found_nfc == self.nfc.id):
-                self.nfc.activate_id(found_nfc)
+            if not (found_nfc == self.album.id):
+                self.album.activate_id(found_nfc)
         # If none found, deactivate it
         else:
-            if (not self.nfc.id == "default"):
+            if (not self.album.id == "default"):
                 logger.info('Deactivating current NFC card association and returning to default directory')
-                self.nfc.deactivate_id()
+                self.album.deactivate_id()
 
     def render_gallery(self):
         """
@@ -221,7 +221,7 @@ class CameraApp():
         """
         logger.debug('Function render_gallery')
         # Get and display image at current position
-        res = self.nfc.load_image()
+        res = self.album.load_image()
         filename = res["filename"]
         extension = res["extension"]
         if (not extension == ".h264") and (not extension == ".mp4"):
@@ -391,7 +391,7 @@ class CameraApp():
         else:
             logger.info('Scrolling to new image and resetting any playing video file association')
             # Increment or decrement current gallery position (with wrapping)
-            self.nfc.gallery_scroll(dir)
+            self.album.gallery_scroll(dir)
             self.playing_video_file = None
 
     def action_capture(self):
@@ -415,7 +415,7 @@ class CameraApp():
         else:
             if self.capture_mode == CaptureMode.PICTURE:
                 # Take a pic with current self.camera
-                filename = os.path.join(self.nfc.pic_path, formatted_timestamp)
+                filename = os.path.join(self.album.pic_path, formatted_timestamp)
                 filename += ".jpeg"
                 logger.info('Instructing active camera to save image to %s', filename)
                 self.get_active_picamera_device().capture_file(filename)
@@ -423,7 +423,7 @@ class CameraApp():
                 logger.info('Setting recording state to true')
                 self.recording = True
                 # Take a video with current self.camera
-                filename = os.path.join(self.nfc.pic_path, formatted_timestamp)
+                filename = os.path.join(self.album.pic_path, formatted_timestamp)
                 # filename += ".h264"
                 # self.get_active_picamera_device().start_recording(encoder, filename)
                 filename += ".mp4"

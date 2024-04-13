@@ -1,3 +1,4 @@
+Adafruit-Blinka
 gpiozero
 opencv-python
 pathlib

@@ -32,7 +32,7 @@ def get_icon(filepath, rgb=None,alpha=None, position=None):
     elif (position == "bottomright"):
         icon = pygame.transform.scale(icon, (80, 80))
         return [icon, (560, 400)]
-    else # (position == "center"):
+    else: # (position == "center"):
         icon = pygame.transform.scale(icon, (480,480))
         # Center the icon on the screen by placing upper left so it aligns to center
         # (640 - 480) / 2 = 80

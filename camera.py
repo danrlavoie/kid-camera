@@ -121,7 +121,7 @@ class CameraApp():
         self.get_active_picamera_device().close()
         pygame.quit()
         if (self.shut_down_everything):
-            subprocess.run("shutdown")
+            subprocess.run(["shutdown", "+0"])
 
     def get_active_picamera_device(self):
         """

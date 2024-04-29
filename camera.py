@@ -265,7 +265,6 @@ class CameraApp():
         pygame_image = pygame.transform.scale(pygame_image, (640,480))
         self.canvas.blit(pygame_image, dest = (0,0))
 
-        """
         logger.debug('Rendering camera feed debug text onto screen')
         if (self.camera == Camera.SELFIE):
             # Display selfie cam preview
@@ -295,7 +294,6 @@ class CameraApp():
             recording_rect.center = (500, 100)
             self.canvas.blit(recording_text, recording_rect)
             # If recording a video, can show indicator
-        """
 
     def render_battery_icon(self):
         plugged = battery.power_plugged
